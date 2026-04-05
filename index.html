@@ -2,246 +2,1091 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Algorithmic Recourse</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Algorithmic Recourse — Understanding, Evaluating, and Improving AI Decisions</title>
+  <meta name="description" content="Interactive tools, benchmarks, and research for actionable, reliable algorithmic recourse. CHARM Lab, University of Waterloo." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- React -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0d0f0e;
-      --surface: #141714;
-      --border: #232623;
-      --text: #e8ede9;
-      --muted: #6b776c;
-      --accent: #a3e3a0;
-      --accent-dim: #2a3d2a;
-    }
-
-    html { scroll-behavior: smooth; }
-
+    html { scroll-behavior: smooth; font-size: 16px; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 14px;
-      line-height: 1.7;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #111827;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
 
-    /* ─── noise overlay ─── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 1000;
-      opacity: 0.35;
+    /* ── Canvas ── */
+    #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+    /* ── Range inputs ── */
+    input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 4px; border-radius: 2px;
+      background: #e5e7eb; outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #2563eb; cursor: pointer;
+      transition: background .15s, transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { background: #1d4ed8; transform: scale(1.2); }
+    input[type=range]::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #2563eb; cursor: pointer; border: none;
     }
 
-    /* ─── header ─── */
-    header {
-      border-bottom: 1px solid var(--border);
-      padding: 1.5rem 3rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      animation: fadeDown 0.6s ease both;
+    /* ── Animations ── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes floatNode { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+    @keyframes arrowPulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
+    @keyframes glowDelta {
+      0%,100% { box-shadow:0 0 0 0 rgba(37,99,235,0); }
+      50% { box-shadow:0 0 0 8px rgba(37,99,235,.12); }
+    }
+    @keyframes barFill { from { width: 0; } to { width: var(--w); } }
+    @keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+
+    .fade-up { animation: fadeUp .7s ease both; }
+    .float-node { animation: floatNode 3s ease-in-out infinite; }
+    .arrow-pulse { animation: arrowPulse 1.8s ease-in-out infinite; }
+    .glow-delta { animation: glowDelta 2.2s ease-in-out infinite; }
+
+    /* ── Cards ── */
+    .card-hover { transition: transform .22s ease, box-shadow .22s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.09); }
+
+    /* ── Math block ── */
+    .math-display { display:inline-block; padding:.9rem 1.4rem; background:#f8faff; border-left:3px solid #2563eb; border-radius:0 6px 6px 0; }
+
+    /* ── Tags ── */
+    .tag-chip {
+      display:inline-block; font-size:.68rem; font-weight:700;
+      letter-spacing:.06em; text-transform:uppercase;
+      padding:2px 9px; border-radius:99px;
     }
 
-    .logo {
-      font-family: 'Instrument Serif', serif;
-      font-size: 1.1rem;
-      font-style: italic;
-      color: var(--accent);
-      letter-spacing: 0.01em;
-    }
+    /* ── Problem card ── */
+    .prob-card { border-left:3px solid #2563eb; transition:background .2s, border-color .2s; }
+    .prob-card:hover { background:#f8faff; border-color:#1d4ed8; }
 
-    .logo span {
-      color: var(--muted);
-      font-style: normal;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
-      margin-left: 0.6rem;
-    }
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
+    ::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
 
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      transition: color 0.2s;
-      margin-left: 2rem;
-    }
+    /* ── Select ── */
+    select { font-family:inherit; }
 
-    nav a:hover { color: var(--accent); }
-
-    /* ─── hero ─── */
-    .hero {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 6rem 3rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* grid lines */
-    .hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%);
-      opacity: 0.5;
-    }
-
-    .hero-inner {
-      position: relative;
-      z-index: 2;
-      max-width: 680px;
-      text-align: center;
-      animation: fadeUp 0.8s ease 0.2s both;
-    }
-
-    .tag {
-      display: inline-block;
-      background: var(--accent-dim);
-      color: var(--accent);
-      font-size: 0.7rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.8rem;
-      border-radius: 2px;
-      margin-bottom: 2rem;
-    }
-
-    h1 {
-      font-family: 'Instrument Serif', serif;
-      font-size: clamp(2.4rem, 6vw, 4rem);
-      line-height: 1.1;
-      font-weight: 400;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    h1 em {
-      font-style: italic;
-      color: var(--accent);
-    }
-
-    .subtitle {
-      color: var(--muted);
-      font-size: 0.85rem;
-      max-width: 480px;
-      margin: 0 auto 3rem;
-      line-height: 1.8;
-    }
-
-    .cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-      background: var(--accent);
-      color: #0d0f0e;
-      text-decoration: none;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 0.8rem 1.8rem;
-      border-radius: 2px;
-      transition: opacity 0.2s, transform 0.2s;
-    }
-
-    .cta:hover { opacity: 0.85; transform: translateY(-1px); }
-
-    /* ─── status bar ─── */
-    .status-bar {
-      border-top: 1px solid var(--border);
-      padding: 0.8rem 3rem;
-      display: flex;
-      align-items: center;
-      gap: 2rem;
-      font-size: 0.7rem;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      animation: fadeUp 0.6s ease 0.5s both;
-    }
-
-    .status-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 6px var(--accent);
-      display: inline-block;
-      margin-right: 0.4rem;
-      animation: pulse 2s ease infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 600px) {
-      header { padding: 1.2rem 1.5rem; }
-      .hero { padding: 4rem 1.5rem; }
-      .status-bar { padding: 0.8rem 1.5rem; flex-wrap: wrap; gap: 0.8rem; }
+    /* ── Responsive helpers ── */
+    @media (max-width: 768px) {
+      .hide-mobile { display:none !important; }
     }
   </style>
 </head>
 <body>
+<div id="root"></div>
 
-  <header>
-    <div class="logo">
-      Algorithmic Recourse
-      <span>v0.1</span>
-    </div>
-    <nav>
-      <a href="#">Research</a>
-      <a href="#">About</a>
-      <a href="#">Contact</a>
+<script type="text/babel">
+/* ═══════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════ */
+const { useState, useEffect, useRef, useCallback } = React;
+
+function KatexSpan({ tex, display = false, style = {} }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.katex) {
+      katex.render(tex, ref.current, { displayMode: display, throwOnError: false, strict: false });
+    }
+  }, [tex, display]);
+  return <span ref={ref} style={{ display: display ? 'block' : 'inline', ...style }} />;
+}
+
+/* ═══════════════════════════════════════════════
+   ANIMATED NETWORK CANVAS
+═══════════════════════════════════════════════ */
+function NetworkCanvas() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf;
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const N = 42;
+    const nodes = Array.from({ length: N }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: 1.5 + Math.random() * 2,
+    }));
+
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width)  n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+      });
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d  = Math.sqrt(dx * dx + dy * dy);
+          if (d < 140) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(147,197,253,${(1 - d / 140) * 0.55})`;
+            ctx.lineWidth = .7;
+            ctx.stroke();
+          }
+        }
+      }
+      nodes.forEach(n => {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(147,197,253,0.75)';
+        ctx.fill();
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+  return <canvas ref={ref} id="hero-canvas" style={{ opacity: .2 }} />;
+}
+
+/* ═══════════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════════ */
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 48);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+
+  const links = ['Methods', 'Benchmark', 'Demo', 'Research', 'Problems'];
+  const s = {
+    nav: {
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+      background: scrolled ? 'rgba(255,255,255,.97)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(14px)' : 'none',
+      borderBottom: scrolled ? '1px solid #e5e7eb' : 'none',
+      transition: 'all .3s',
+    },
+    inner: { maxWidth: 1200, margin: '0 auto', padding: '0 2rem', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    logo: { display: 'flex', alignItems: 'center', gap: 9 },
+    logoText: { fontWeight: 800, fontSize: '.9rem', color: scrolled ? '#111827' : '#fff', letterSpacing: '-.02em' },
+    linkColor: scrolled ? '#4b5563' : 'rgba(255,255,255,.82)',
+  };
+
+  return (
+    <nav style={s.nav}>
+      <div style={s.inner}>
+        <div style={s.logo}>
+          <div style={{ width: 30, height: 30, background: '#2563eb', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="3.5" cy="8" r="2" fill="white"/>
+              <circle cx="12.5" cy="3.5" r="2" fill="white"/>
+              <circle cx="12.5" cy="12.5" r="2" fill="white"/>
+              <line x1="5.5" y1="8" x2="10.5" y2="4.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+              <line x1="5.5" y1="8" x2="10.5" y2="11.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <span style={s.logoText}>AlgorithmicRecourse</span>
+        </div>
+
+        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          {links.map(l => (
+            <a key={l} href={`#${l.toLowerCase()}`}
+               style={{ fontSize: '.85rem', fontWeight: 500, color: s.linkColor, textDecoration: 'none', transition: 'color .15s' }}
+               onMouseEnter={e => e.currentTarget.style.color = scrolled ? '#111827' : '#fff'}
+               onMouseLeave={e => e.currentTarget.style.color = s.linkColor}>{l}</a>
+          ))}
+          <a href="#demo" style={{ padding: '8px 20px', background: '#2563eb', color: '#fff', borderRadius: 7, fontWeight: 600, fontSize: '.85rem', textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,.35)', transition: 'background .2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#1d4ed8'}
+            onMouseLeave={e => e.currentTarget.style.background = '#2563eb'}>
+            Try Demo
+          </a>
+        </div>
+      </div>
     </nav>
-  </header>
+  );
+}
 
-  <main class="hero">
-    <div class="hero-inner">
-      <div class="tag">Coming Soon</div>
-      <h1>When algorithms decide,<br><em>you deserve a path back.</em></h1>
-      <p class="subtitle">
-        Exploring the intersection of machine learning, fairness, and the human
-        right to explanation — one decision at a time.
-      </p>
-      <a class="cta" href="mailto:hello@algorithmicrecourse.com">
-        Get in touch →
-      </a>
+/* ═══════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════ */
+function FlowNode({ label, sub, accent, delay = 0 }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      className={accent ? 'glow-delta' : 'float-node'}
+      style={{ animationDelay: `${delay}s`, textAlign: 'center', padding: '10px 16px', minWidth: 88, borderRadius: 9,
+        background: accent ? 'rgba(37,99,235,.25)' : sub === 'y*' ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.08)',
+        border: `1px solid ${accent ? 'rgba(37,99,235,.6)' : sub === 'y*' ? 'rgba(16,185,129,.4)' : 'rgba(255,255,255,.14)'}`,
+        transition: 'transform .2s',
+        cursor: 'default',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{ fontSize: '.65rem', color: 'rgba(255,255,255,.45)', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: '1.35rem', fontWeight: 700,
+        color: accent ? '#93c5fd' : sub === 'y*' ? '#6ee7b7' : '#fff',
+      }}>{sub}</div>
     </div>
-  </main>
+  );
+}
 
-  <footer class="status-bar">
-    <span><span class="status-dot"></span>Site live</span>
-    <span>algorithmicrecourse.com</span>
-    <span style="margin-left:auto;">Built with GitHub Pages</span>
-  </footer>
+function Hero() {
+  return (
+    <section style={{
+      position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(145deg, #060d20 0%, #0c1a40 55%, #071224 100%)',
+      overflow: 'hidden', padding: '8rem 2rem 6rem',
+    }}>
+      <NetworkCanvas />
 
+      {/* Grid overlay */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'linear-gradient(rgba(37,99,235,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,.05) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
+      }} />
+
+      {/* Radial glow */}
+      <div style={{
+        position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)',
+        width: 700, height: 500, borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(37,99,235,.12) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 880, textAlign: 'center' }} className="fade-up">
+
+        {/* Badge */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: '1.75rem',
+          padding: '6px 16px', background: 'rgba(37,99,235,.15)', border: '1px solid rgba(37,99,235,.3)', borderRadius: 99 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#60a5fa', animation: 'dotPulse 2s ease infinite' }} />
+          <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#93c5fd', letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            Research Platform · CHARM Lab, University of Waterloo
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1 style={{ fontSize: 'clamp(2.2rem,5vw,3.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1.14, letterSpacing: '-.03em', marginBottom: '1.4rem' }}>
+          Algorithmic Recourse
+          <br />
+          <span style={{ background: 'linear-gradient(90deg,#93c5fd,#a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Understanding, Evaluating,
+          </span>
+          <br />
+          and Improving Decisions Made by AI
+        </h1>
+
+        <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,.6)', maxWidth: 600, margin: '0 auto 2.75rem', lineHeight: 1.78, fontWeight: 400 }}>
+          From theory to deployment: interactive tools, benchmarks, and research for actionable, reliable recourse.
+        </p>
+
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: '4.5rem' }}>
+          <a href="#methods"
+            style={{ padding: '13px 28px', background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.92rem', textDecoration: 'none', boxShadow: '0 4px 24px rgba(37,99,235,.45)', transition: 'all .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#1d4ed8'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='#2563eb'; e.currentTarget.style.transform='translateY(0)'; }}>
+            Explore Methods
+          </a>
+          <a href="#demo"
+            style={{ padding: '13px 28px', background: 'rgba(255,255,255,.08)', color: '#fff', border: '1px solid rgba(255,255,255,.18)', borderRadius: 8, fontWeight: 600, fontSize: '.92rem', textDecoration: 'none', backdropFilter: 'blur(8px)', transition: 'all .2s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,.15)'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,.08)'; e.currentTarget.style.transform='translateY(0)'; }}>
+            Try Interactive Demo
+          </a>
+        </div>
+
+        {/* Flow Diagram */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>
+          {[
+            { label: 'Input', sub: 'x', delay: 0 },
+            null,
+            { label: 'Model', sub: 'f(·)', delay: 0.3 },
+            null,
+            { label: 'Decision', sub: 'y', delay: 0.6 },
+            null,
+            { label: 'Recourse', sub: 'δ', accent: true, delay: 0.9 },
+            null,
+            { label: 'New Outcome', sub: 'y*', delay: 1.2 },
+          ].map((item, i) =>
+            item === null
+              ? <div key={i} className="arrow-pulse" style={{ color: 'rgba(147,197,253,.65)', fontSize: '1.3rem', fontWeight: 300, padding: '0 2px' }}>→</div>
+              : <FlowNode key={i} {...item} />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   WHAT IS RECOURSE
+═══════════════════════════════════════════════ */
+function RecourseSlider() {
+  const [income, setIncome] = useState(38);
+  const [education, setEducation] = useState(12);
+  const [employment, setEmployment] = useState(18);
+
+  const score = income * 0.45 + education * 2.5 + employment * 0.25;
+  const threshold = 70;
+  const approved = score >= threshold;
+  const pct = Math.min(100, Math.round((score / threshold) * 100));
+
+  const recourseIncome = Math.ceil((threshold - education * 2.5 - employment * 0.25) / 0.45);
+  const recourseEdu   = Math.ceil((threshold - income * 0.45 - employment * 0.25) / 2.5);
+
+  return (
+    <div style={{ background: '#f8faff', border: '1px solid #dbeafe', borderRadius: 14, padding: '1.75rem' }}>
+      <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1.25rem' }}>
+        Interactive Example · Loan Decision
+      </div>
+
+      {[
+        { label: 'Annual Income ($k)', val: income, set: setIncome, min: 10, max: 120 },
+        { label: 'Education (years)',   val: education, set: setEducation, min: 6, max: 22 },
+        { label: 'Employment (months)', val: employment, set: setEmployment, min: 0, max: 120 },
+      ].map(({ label, val, set, min, max }) => (
+        <div key={label} style={{ marginBottom: '1.1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <span style={{ fontSize: '.82rem', color: '#374151', fontWeight: 500 }}>{label}</span>
+            <span style={{ fontSize: '.82rem', color: '#2563eb', fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>{val}</span>
+          </div>
+          <input type="range" min={min} max={max} value={val} onChange={e => set(+e.target.value)} />
+        </div>
+      ))}
+
+      {/* Score bar */}
+      <div style={{ margin: '1.25rem 0 .5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+          <span style={{ fontSize: '.75rem', color: '#6b7280', fontWeight: 600 }}>Credit Score</span>
+          <span style={{ fontSize: '.75rem', color: approved ? '#059669' : '#dc2626', fontWeight: 700 }}>{Math.round(score)}/100</span>
+        </div>
+        <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: approved ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)', transition: 'width .4s ease, background .4s ease' }} />
+        </div>
+      </div>
+
+      {/* Decision */}
+      <div style={{
+        padding: '1rem 1.2rem', borderRadius: 9,
+        background: approved ? 'rgba(16,185,129,.08)' : 'rgba(239,68,68,.08)',
+        border: `1px solid ${approved ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'}`,
+        transition: 'all .3s',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: approved ? 0 : 8 }}>
+          <div style={{ width: 9, height: 9, borderRadius: '50%', background: approved ? '#10b981' : '#ef4444', flexShrink: 0, transition: 'background .3s' }} />
+          <span style={{ fontWeight: 700, fontSize: '.88rem', color: approved ? '#065f46' : '#7f1d1d' }}>
+            {approved ? 'Loan Approved ✓' : 'Loan Denied ✗'}
+          </span>
+        </div>
+        {!approved && (
+          <p style={{ fontSize: '.75rem', color: '#6b7280', lineHeight: 1.6 }}>
+            <strong style={{ color: '#374151' }}>Recourse:</strong> Increase income to ${recourseIncome}k  <em>or</em> education to {recourseEdu} years to reverse this decision.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WhatIsRecourse() {
+  return (
+    <section id="recourse" style={{ padding: '7rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: '4.5rem', alignItems: 'start' }}>
+
+        <div>
+          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Core Concept</div>
+          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.18, marginBottom: '1.25rem' }}>
+            What is Algorithmic Recourse?
+          </h2>
+          <p style={{ fontSize: '1rem', color: '#4b5563', lineHeight: 1.78, marginBottom: '1.75rem' }}>
+            When an AI system makes a consequential decision—denying a loan, rejecting an application, assigning a risk score—recourse asks:
+            <span style={{ color: '#1d4ed8', fontWeight: 600 }}> what minimal change would flip the outcome?</span>
+          </p>
+
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.6rem' }}>Formal Optimization Problem</div>
+            <div className="math-display">
+              <KatexSpan tex="\min_{\delta} \; c(\delta) \quad \text{s.t.} \quad f(\mathbf{x} + \delta) = y^*" />
+            </div>
+            <p style={{ fontSize: '.78rem', color: '#6b7280', marginTop: '.6rem', lineHeight: 1.6 }}>
+              Find the minimal-cost perturbation <KatexSpan tex="\delta" /> to input <KatexSpan tex="\mathbf{x}" /> such that model <KatexSpan tex="f" /> predicts the desired outcome <KatexSpan tex="y^*" />.
+            </p>
+          </div>
+
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 11 }}>
+            {[
+              { icon: '⟶', text: 'Actionable changes—not post-hoc explanations alone' },
+              { icon: '◎', text: 'Personalized to the individual and their context' },
+              { icon: '⧖', text: 'Constrained by feasibility, causality, and cost' },
+            ].map(({ icon, text }) => (
+              <li key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, background: '#eff6ff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', color: '#2563eb', flexShrink: 0, fontWeight: 700 }}>{icon}</div>
+                <span style={{ fontSize: '.88rem', color: '#374151', fontWeight: 500, lineHeight: 1.5 }}>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <RecourseSlider />
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   THREE PILLARS
+═══════════════════════════════════════════════ */
+function Pillars() {
+  const pillars = [
+    {
+      num: '01', title: 'Understand', color: '#2563eb', bg: '#eff6ff',
+      desc: 'Formalizing recourse through optimization, causality, and decision theory. Grounding recommendations in rigorous mathematical foundations.',
+      tags: ['Optimization', 'Causal', 'Theory'],
+      svg: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="1.6"/>
+          <path d="M9 12h6M12 9v6" stroke="#2563eb" strokeWidth="1.6" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      num: '02', title: 'Challenge', color: '#7c3aed', bg: '#f5f3ff',
+      desc: 'Generating recourse under real-world constraints: feasibility, fairness, and robustness to distribution shift and adversarial conditions.',
+      tags: ['Robustness', 'Fairness', 'Constraints'],
+      svg: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke="#7c3aed" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      num: '03', title: 'Improve', color: '#059669', bg: '#ecfdf5',
+      desc: 'Feedback loops, human-AI interaction, and adaptive systems that co-evolve recourse strategies over sequential decision processes.',
+      tags: ['Adaptive', 'Human-AI', 'Sequential'],
+      svg: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M20 12a8 8 0 01-8 8A8 8 0 014 12a8 8 0 018-8" stroke="#059669" strokeWidth="1.6" strokeLinecap="round"/>
+          <path d="M20 8v4h-4" stroke="#059669" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Research Framework</div>
+          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Three Pillars</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1.5rem' }}>
+          {pillars.map(p => (
+            <div key={p.title} className="card-hover" style={{
+              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 13, padding: '2rem',
+              borderTop: `3px solid ${p.color}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                <div style={{ width: 50, height: 50, background: p.bg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {p.svg}
+                </div>
+                <span style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em' }}>{p.num}</span>
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-.02em', marginBottom: '.7rem', color: '#111827' }}>{p.title}</h3>
+              <p style={{ fontSize: '.875rem', color: '#6b7280', lineHeight: 1.68, marginBottom: '1.25rem' }}>{p.desc}</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {p.tags.map(t => (
+                  <span key={t} className="tag-chip" style={{ background: p.bg, color: p.color }}>{t}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   INTERACTIVE RESEARCH
+═══════════════════════════════════════════════ */
+function InteractiveResearch() {
+  const papers = [
+    {
+      num: '01', title: 'A Unified Framework for Recourse',
+      desc: 'Explore optimization-based and causal recourse side-by-side through interactive visualizations and adjustable model parameters.',
+      tags: ['Optimization', 'Causal', 'Interactive'], cta: 'Open', available: true, color: '#2563eb',
+    },
+    {
+      num: '02', title: 'Causal Explainability',
+      desc: 'See how recourse recommendations change under different structural causal assumptions, with live interventional semantics.',
+      tags: ['Causality', 'SCM', 'Counterfactual'], cta: 'Explore', available: true, color: '#7c3aed',
+    },
+    {
+      num: '03', title: 'Human-AI Recourse Systems',
+      desc: 'Multi-step and multi-agent decision dynamics where humans and AI systems co-navigate recourse trajectories over time.',
+      tags: ['Multi-Agent', 'Sequential', 'Human-AI'], cta: 'Coming Soon', available: false, color: '#6b7280',
+    },
+  ];
+
+  return (
+    <section id="research" style={{ padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div>
+            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Publications</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Interactive Research</h2>
+          </div>
+          <p style={{ fontSize: '.88rem', color: '#6b7280', maxWidth: 360, lineHeight: 1.7 }}>
+            Research artifacts with embedded interactivity. Explore models, assumptions, and results directly in the browser.
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: '1.5rem' }}>
+          {papers.map(p => (
+            <div key={p.title} className="card-hover" style={{
+              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 13, padding: '2rem',
+              display: 'flex', flexDirection: 'column', opacity: p.available ? 1 : .72,
+            }}>
+              <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em', marginBottom: '1rem' }}>PAPER {p.num}</div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-.02em', lineHeight: 1.35, marginBottom: '.75rem' }}>{p.title}</h3>
+              <p style={{ fontSize: '.85rem', color: '#6b7280', lineHeight: 1.68, flex: 1, marginBottom: '1.5rem' }}>{p.desc}</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.4rem' }}>
+                {p.tags.map(t => <span key={t} className="tag-chip" style={{ background: '#f3f4f6', color: '#6b7280' }}>{t}</span>)}
+              </div>
+              <button
+                style={{
+                  padding: '10px 22px', borderRadius: 7, border: `1.5px solid ${p.available ? p.color : '#e5e7eb'}`,
+                  background: 'transparent', color: p.available ? p.color : '#9ca3af',
+                  fontWeight: 600, fontSize: '.875rem', cursor: p.available ? 'pointer' : 'default',
+                  transition: 'background .2s, color .2s', alignSelf: 'flex-start',
+                }}
+                onMouseEnter={e => { if (p.available) { e.currentTarget.style.background = p.color; e.currentTarget.style.color = '#fff'; } }}
+                onMouseLeave={e => { if (p.available) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = p.color; } }}>
+                {p.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   METHODS LIBRARY
+═══════════════════════════════════════════════ */
+function Methods() {
+  const [filter, setFilter] = useState('All');
+  const methods = [
+    { name: 'Wachter et al.', year: '2017', desc: 'Counterfactual explanations without opening the black box.', tags: ['Optimization'] },
+    { name: 'DiCE', year: '2020', desc: 'Diverse counterfactual explanations via gradient-based search.', tags: ['Optimization', 'Diverse'] },
+    { name: 'Causal Recourse', year: '2021', desc: 'Recourse via structural causal models with interventional semantics.', tags: ['Causal'] },
+    { name: 'ROAR', year: '2021', desc: 'Robust algorithmic recourse under model multiplicity.', tags: ['Robust', 'Optimization'] },
+    { name: 'FACE', year: '2019', desc: 'Feasible and actionable counterfactual explanations.', tags: ['Optimization', 'Feasibility'] },
+    { name: 'GeCo', year: '2021', desc: 'Quality counterfactuals respecting user constraints.', tags: ['Optimization', 'Feasibility'] },
+    { name: 'MCCE', year: '2022', desc: 'Causal counterfactuals via Monte Carlo sampling.', tags: ['Causal', 'Sampling'] },
+    { name: 'ActionableRecourse', year: '2019', desc: 'Feasibility-aware recourse with actionability constraints.', tags: ['Feasibility', 'Optimization'] },
+  ];
+
+  const tagPalette = {
+    Optimization: { bg:'#dbeafe', color:'#1d4ed8' },
+    Causal:       { bg:'#ede9fe', color:'#6d28d9' },
+    Robust:       { bg:'#dcfce7', color:'#15803d' },
+    Diverse:      { bg:'#fef9c3', color:'#a16207' },
+    Feasibility:  { bg:'#fee2e2', color:'#b91c1c' },
+    Sampling:     { bg:'#ffedd5', color:'#c2410c' },
+  };
+
+  const filterOptions = ['All', 'Optimization', 'Causal', 'Robust', 'Feasibility'];
+  const visible = filter === 'All' ? methods : methods.filter(m => m.tags.includes(filter));
+
+  return (
+    <section id="methods" style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '3rem' }}>
+          <div>
+            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Reference</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Methods</h2>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {filterOptions.map(t => (
+              <button key={t} onClick={() => setFilter(t)} style={{
+                padding: '6px 16px', borderRadius: 99, border: '1.5px solid',
+                borderColor: filter === t ? '#2563eb' : '#e5e7eb',
+                background: filter === t ? '#2563eb' : '#fff',
+                color: filter === t ? '#fff' : '#6b7280',
+                fontWeight: 600, fontSize: '.78rem', cursor: 'pointer', transition: 'all .18s',
+                fontFamily: 'inherit',
+              }}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: '1rem' }}>
+          {visible.map(m => (
+            <div key={m.name} className="card-hover" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '1.4rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '.5rem' }}>
+                <h4 style={{ fontSize: '.9rem', fontWeight: 700, letterSpacing: '-.01em', lineHeight: 1.35, flex: 1 }}>{m.name}</h4>
+                <span style={{ fontSize: '.7rem', color: '#9ca3af', fontWeight: 500, flexShrink: 0, marginLeft: 8, fontFamily: '"JetBrains Mono", monospace' }}>{m.year}</span>
+              </div>
+              <p style={{ fontSize: '.8rem', color: '#6b7280', lineHeight: 1.58, marginBottom: '1rem' }}>{m.desc}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {m.tags.map(t => (
+                    <span key={t} className="tag-chip" style={{ background: tagPalette[t]?.bg || '#f3f4f6', color: tagPalette[t]?.color || '#374151' }}>{t}</span>
+                  ))}
+                </div>
+                <button style={{ fontSize: '.75rem', fontWeight: 700, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', fontFamily: 'inherit' }}>
+                  Details →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   BENCHMARK
+═══════════════════════════════════════════════ */
+function Benchmark() {
+  const [animated, setAnimated] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setAnimated(true); }, { threshold: .3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  const metrics = [
+    { name: 'Validity',     pct: 92, color: '#60a5fa', formula: 'f(\\mathbf{x}+\\delta) = y^*',                               desc: 'Recourse achieves target outcome under the original model.' },
+    { name: 'Cost',         pct: 81, color: '#a78bfa', formula: 'c(\\delta) = \\|\\delta\\|_1',                                desc: 'L₁ distance in feature space, normalized by actionability constraints.' },
+    { name: 'Plausibility', pct: 68, color: '#34d399', formula: '\\delta \\in \\mathcal{F}(\\mathbf{x})',                       desc: 'Recourse lies within the data manifold and satisfies domain constraints.' },
+    { name: 'Robustness',   pct: 54, color: '#fbbf24', formula: '\\mathbb{P}(f(\\mathbf{x}+\\delta+\\epsilon)=y^*) \\geq \\alpha', desc: 'Recommendation remains valid under small input and model perturbations.' },
+  ];
+
+  return (
+    <section id="benchmark" ref={ref} style={{ background: '#080f27', padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>RecourseBench</div>
+          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', color: '#fff', marginBottom: '.75rem' }}>
+            Benchmarking Recourse
+          </h2>
+          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,.5)', maxWidth: 500, margin: '0 auto', lineHeight: 1.72 }}>
+            Evaluate methods across standardized metrics on curated datasets. Reproducible. Open. Community-driven.
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
+          {metrics.map(m => (
+            <div key={m.name} style={{
+              background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.09)',
+              borderRadius: 11, padding: '1.75rem',
+              transition: 'background .2s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.09)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.055)'}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.75rem' }}>
+                <h4 style={{ color: '#fff', fontWeight: 700, fontSize: '.98rem' }}>{m.name}</h4>
+                <span style={{ color: m.color, fontWeight: 800, fontSize: '1.15rem', fontFamily: '"JetBrains Mono", monospace' }}>{m.pct}%</span>
+              </div>
+              <div style={{ height: 5, background: 'rgba(255,255,255,.1)', borderRadius: 3, marginBottom: '1rem', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 3, background: m.color,
+                  width: animated ? `${m.pct}%` : '0%',
+                  transition: 'width 1.1s cubic-bezier(.34,1.56,.64,1)',
+                }} />
+              </div>
+              <div style={{ background: 'rgba(255,255,255,.04)', borderRadius: 7, padding: '.55rem .75rem', marginBottom: '.75rem' }}>
+                <KatexSpan tex={m.formula} style={{ color: m.color, fontSize: '.8rem' }} />
+              </div>
+              <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.4)', lineHeight: 1.58 }}>{m.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button style={{ padding: '12px 28px', background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.9rem', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(37,99,235,.4)', transition: 'background .2s', fontFamily: 'inherit' }}
+            onMouseEnter={e => e.currentTarget.style.background='#1d4ed8'}
+            onMouseLeave={e => e.currentTarget.style.background='#2563eb'}>
+            View Leaderboard
+          </button>
+          <button style={{ padding: '12px 28px', background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', transition: 'background .2s', fontFamily: 'inherit' }}
+            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.07)'}
+            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+            Submit Method
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   SANDBOX / DEMO
+═══════════════════════════════════════════════ */
+function Sandbox() {
+  const [dataset, setDataset] = useState('Credit Scoring');
+  const [model,   setModel]   = useState('Logistic Regression');
+  const [generated, setGenerated] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleGenerate = () => {
+    setLoading(true);
+    setGenerated(false);
+    setTimeout(() => { setLoading(false); setGenerated(true); }, 900);
+  };
+
+  const recourseMessages = {
+    'Credit Scoring': { 'Logistic Regression': 'Increase income by $14k and reduce debt by $2k.' },
+    'COMPAS':         { 'Logistic Regression': 'Decrease prior offenses by 1, increase program participation.' },
+    'Adult Income':   { 'Logistic Regression': 'Increase education to Bachelor\'s level (+2 years).' },
+  };
+  const msg = (recourseMessages[dataset] || {})[model] || 'Adjust features to change the model outcome.';
+
+  return (
+    <section id="demo" style={{ padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(360px,1fr))', gap: '4rem', alignItems: 'center' }}>
+
+        <div>
+          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Interactive Tool</div>
+          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.2, marginBottom: '1.25rem' }}>Try Recourse</h2>
+          <p style={{ fontSize: '1rem', color: '#6b7280', lineHeight: 1.76, marginBottom: '2rem' }}>
+            Experiment with different models, datasets, and feature configurations. Generate recourse recommendations in real time and visualize the decision boundary.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: '2.25rem' }}>
+            {[
+              { icon: '↑', text: 'Upload or select a dataset' },
+              { icon: '⊞', text: 'Adjust individual features with sliders' },
+              { icon: '◉', text: 'Observe decision boundary changes' },
+              { icon: '→', text: 'Visualize the recourse path in feature space' },
+            ].map(({ icon, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                <div style={{ width: 36, height: 36, background: '#eff6ff', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 800, fontSize: '.88rem', flexShrink: 0 }}>{icon}</div>
+                <span style={{ fontSize: '.88rem', color: '#374151', fontWeight: 500 }}>{text}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleGenerate}
+            style={{ padding: '13px 30px', background: '#111827', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.95rem', border: 'none', cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#2563eb'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='#111827'; e.currentTarget.style.transform='translateY(0)'; }}>
+            Launch Demo →
+          </button>
+        </div>
+
+        {/* Terminal mockup */}
+        <div style={{ background: '#0d1117', borderRadius: 14, overflow: 'hidden', border: '1px solid #21262d', boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
+          {/* Titlebar */}
+          <div style={{ padding: '12px 16px', background: '#161b22', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 7 }}>
+            {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
+            <div style={{ flex: 1, background: '#0d1117', borderRadius: 5, height: 22, marginLeft: 10, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>
+              <span style={{ fontSize: '.63rem', color: '#6e7681', fontFamily: '"JetBrains Mono", monospace' }}>recoursehub.ai/demo</span>
+            </div>
+          </div>
+
+          <div style={{ padding: '1.4rem' }}>
+            {/* Selectors */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              {[
+                { label: 'Dataset', val: dataset, set: setDataset, opts: ['Credit Scoring','COMPAS','Adult Income'] },
+                { label: 'Model',   val: model,   set: setModel,   opts: ['Logistic Regression','Random Forest','Neural Net'] },
+              ].map(({ label, val, set, opts }) => (
+                <div key={label} style={{ background: '#161b22', borderRadius: 8, padding: '.7rem .9rem', border: '1px solid #21262d' }}>
+                  <div style={{ fontSize: '.6rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3, fontWeight: 700 }}>{label}</div>
+                  <select value={val} onChange={e => set(e.target.value)}
+                    style={{ background: 'transparent', border: 'none', color: '#e6edf3', fontSize: '.78rem', fontWeight: 600, cursor: 'pointer', width: '100%', outline: 'none' }}>
+                    {opts.map(o => <option key={o} value={o} style={{ background: '#161b22' }}>{o}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            {/* SVG vis */}
+            <div style={{ background: '#161b22', borderRadius: 9, padding: '.75rem', marginBottom: 12, border: '1px solid #21262d' }}>
+              <svg width="100%" height="130" viewBox="0 0 300 130">
+                {/* Boundary */}
+                <path d="M50 20 Q150 68 250 30" stroke="#2563eb" strokeWidth="1.4" fill="none" strokeDasharray="5 3" opacity=".7"/>
+                {/* Denied dots */}
+                {[[40,75],[60,88],[45,62],[75,80],[55,95],[35,85]].map(([x,y],i) =>
+                  <circle key={i} cx={x} cy={y} r="3.5" fill="#ef4444" opacity=".65"/>
+                )}
+                {/* Approved dots */}
+                {[[190,38],[210,50],[175,28],[230,42],[200,58],[218,34]].map(([x,y],i) =>
+                  <circle key={i} cx={x} cy={y} r="3.5" fill="#10b981" opacity=".65"/>
+                )}
+                {/* Individual */}
+                <circle cx="115" cy="75" r="6" fill="#f59e0b"/>
+                <text x="124" y="79" fill="#f59e0b" fontSize="10" fontWeight="700" fontFamily="Georgia,serif" fontStyle="italic">x</text>
+                {/* Recourse arrow */}
+                {generated && (
+                  <>
+                    <path d="M120 72 L178 50" stroke="#60a5fa" strokeWidth="1.6" strokeDasharray="4 2" markerEnd="url(#arrowHead)"/>
+                    <circle cx="182" cy="48" r="6" fill="#60a5fa" opacity=".9"/>
+                    <text x="190" y="52" fill="#60a5fa" fontSize="9" fontWeight="700" fontFamily="Georgia,serif" fontStyle="italic">x+δ</text>
+                  </>
+                )}
+                <defs>
+                  <marker id="arrowHead" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+                    <path d="M0,0 L0,7 L7,3.5 z" fill="#60a5fa"/>
+                  </marker>
+                </defs>
+                <text x="28" y="118" fill="#ef4444" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Denied</text>
+                <text x="198" y="18" fill="#10b981" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Approved</text>
+                <text x="95" y="118" fill="#f59e0b" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Individual</text>
+              </svg>
+            </div>
+
+            {/* Status */}
+            <div style={{ borderRadius: 8, padding: '.8rem 1rem', background: loading ? 'rgba(245,158,11,.08)' : generated ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.04)', border: `1px solid ${loading ? 'rgba(245,158,11,.2)' : generated ? 'rgba(37,99,235,.25)' : 'rgba(255,255,255,.08)'}`, transition: 'all .3s' }}>
+              {loading ? (
+                <span style={{ fontSize: '.75rem', color: '#f59e0b', fontFamily: '"JetBrains Mono", monospace' }}>⟳ Computing recourse...</span>
+              ) : generated ? (
+                <span style={{ fontSize: '.75rem', color: '#93c5fd', fontFamily: '"JetBrains Mono", monospace' }}>✓ {msg}</span>
+              ) : (
+                <span style={{ fontSize: '.75rem', color: '#6e7681', fontFamily: '"JetBrains Mono", monospace' }}>Select parameters and launch demo.</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   OPEN PROBLEMS
+═══════════════════════════════════════════════ */
+function OpenProblems() {
+  const problems = [
+    { num:'01', title:'Multi-Agent Recourse',      status:'Active', tags:['Multi-Agent','Game Theory'],    desc:'How do multiple stakeholders interact when recourse actions conflict? Equilibrium concepts and strategic behavior under adversarial dynamics.' },
+    { num:'02', title:'Robust Recourse',           status:'Active', tags:['Robustness','Certification'], desc:'How stable are recourse recommendations under model shifts or retraining? Certifiable robustness guarantees under distribution change.' },
+    { num:'03', title:'Sequential Recourse',       status:'Open',   tags:['Sequential','Temporal'],       desc:'What happens when decisions unfold over time? Long-horizon recourse in non-stationary environments with adaptive policies.' },
+    { num:'04', title:'Causal Identifiability',    status:'Open',   tags:['Causal','Theory'],             desc:'When can interventional recourse be identified from observational data alone? Partial identification under unknown causal structure.' },
+  ];
+
+  return (
+    <section id="problems" style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div>
+            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Research Agenda</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Open Problems</h2>
+          </div>
+          <p style={{ fontSize: '.88rem', color: '#6b7280', maxWidth: 360, lineHeight: 1.7 }}>Fundamental questions shaping the next generation of recourse research.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(270px,1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+          {problems.map(p => (
+            <div key={p.title} className="prob-card" style={{ background: '#fff', borderRadius: '0 11px 11px 0', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.6rem' }}>
+                <span style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em' }}>{p.num}</span>
+                <span className="tag-chip" style={{ background: p.status === 'Active' ? '#dcfce7' : '#fef3c7', color: p.status === 'Active' ? '#166534' : '#b45309' }}>{p.status}</span>
+              </div>
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-.02em', marginBottom: '.6rem' }}>{p.title}</h4>
+              <p style={{ fontSize: '.82rem', color: '#6b7280', lineHeight: 1.62, marginBottom: '1rem' }}>{p.desc}</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {p.tags.map(t => <span key={t} className="tag-chip" style={{ background: '#f3f4f6', color: '#6b7280' }}>{t}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button style={{ padding: '12px 28px', background: '#111827', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.9rem', border: 'none', cursor: 'pointer', transition: 'background .2s', fontFamily: 'inherit' }}
+            onMouseEnter={e => e.currentTarget.style.background='#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.background='#111827'}>
+            View All Problems
+          </button>
+          <button style={{ padding: '12px 28px', background: 'transparent', color: '#111827', border: '1.5px solid #e5e7eb', borderRadius: 8, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#111827'; e.currentTarget.style.color='#fff'; e.currentTarget.style.borderColor='#111827'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#111827'; e.currentTarget.style.borderColor='#e5e7eb'; }}>
+            Collaborate →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   LEARN
+═══════════════════════════════════════════════ */
+function Learn() {
+  const resources = [
+    { icon: '◯', title: 'What is Recourse?', level: 'Intro', levelBg: '#dcfce7', levelColor: '#166534', desc: 'A concise primer: definitions, motivation, and the distinction between explanation and recourse.' },
+    { icon: '◈', title: 'Causal vs. Non-Causal Recourse', level: 'Intermediate', levelBg: '#dbeafe', levelColor: '#1d4ed8', desc: 'When causal structure matters, identifiability conditions, and the cost of ignoring causality.' },
+    { icon: '◆', title: 'From Papers to Practice', level: 'Advanced', levelBg: '#ede9fe', levelColor: '#6d28d9', desc: 'Bridging theoretical frameworks to production AI systems: integration, monitoring, and auditing.' },
+  ];
+  return (
+    <section id="learn" style={{ padding: '5.5rem 2rem' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Education</div>
+          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Learn</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1.25rem' }}>
+          {resources.map(r => (
+            <div key={r.title} className="card-hover" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 11, padding: '1.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
+                <span style={{ fontSize: '1.4rem', color: '#2563eb' }}>{r.icon}</span>
+                <span className="tag-chip" style={{ background: r.levelBg, color: r.levelColor }}>{r.level}</span>
+              </div>
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-.02em', marginBottom: '.6rem' }}>{r.title}</h4>
+              <p style={{ fontSize: '.82rem', color: '#6b7280', lineHeight: 1.62, marginBottom: '1.25rem' }}>{r.desc}</p>
+              <a href="#" style={{ fontSize: '.82rem', fontWeight: 700, color: '#2563eb', textDecoration: 'none' }}>Read →</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+function Footer() {
+  const linkStyle = { display: 'block', fontSize: '.85rem', color: 'rgba(255,255,255,.55)', textDecoration: 'none', marginBottom: 9, transition: 'color .15s' };
+  const hoverLink = e => e.currentTarget.style.color = '#fff';
+  const leaveLink = e => e.currentTarget.style.color = 'rgba(255,255,255,.55)';
+
+  return (
+    <footer style={{ background: '#080f27', padding: '4.5rem 2rem 2rem', borderTop: '1px solid rgba(255,255,255,.06)' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: '3rem', marginBottom: '3.5rem' }}>
+
+          {/* Brand */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: '1rem' }}>
+              <div style={{ width: 32, height: 32, background: '#2563eb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="3.5" cy="8" r="2" fill="white"/>
+                  <circle cx="12.5" cy="3.5" r="2" fill="white"/>
+                  <circle cx="12.5" cy="12.5" r="2" fill="white"/>
+                  <line x1="5.5" y1="8" x2="10.5" y2="4.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+                  <line x1="5.5" y1="8" x2="10.5" y2="11.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <span style={{ fontWeight: 800, color: '#fff', fontSize: '.92rem', letterSpacing: '-.02em' }}>AlgorithmicRecourse</span>
+            </div>
+            <p style={{ fontSize: '.82rem', color: 'rgba(255,255,255,.45)', lineHeight: 1.65, maxWidth: 220, marginBottom: '1rem' }}>
+              Research on actionable, reliable recourse for AI decision systems.
+            </p>
+            <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.28)', lineHeight: 1.6 }}>
+              CHARM Lab<br />University of Waterloo<br />Waterloo, ON, Canada
+            </p>
+          </div>
+
+          {/* Research */}
+          <div>
+            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Research</div>
+            {['Papers', 'Code & Datasets', 'Benchmark', 'Methods Library', 'Open Problems'].map(l => (
+              <a key={l} href="#" style={linkStyle} onMouseEnter={hoverLink} onMouseLeave={leaveLink}>{l}</a>
+            ))}
+          </div>
+
+          {/* Community */}
+          <div>
+            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Community</div>
+            {['GitHub', 'Submit a Method', 'Collaborate', 'Contact Us', 'Mailing List'].map(l => (
+              <a key={l} href="#" style={linkStyle} onMouseEnter={hoverLink} onMouseLeave={leaveLink}>{l}</a>
+            ))}
+          </div>
+
+          {/* Newsletter */}
+          <div>
+            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Stay Updated</div>
+            <p style={{ fontSize: '.82rem', color: 'rgba(255,255,255,.45)', lineHeight: 1.65, marginBottom: '1rem' }}>
+              New papers, benchmarks, and tools — directly to your inbox.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="email" placeholder="you@university.edu"
+                style={{ flex: 1, padding: '9px 12px', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 7, color: '#fff', fontSize: '.82rem', outline: 'none', fontFamily: 'inherit' }} />
+              <button style={{ padding: '9px 16px', background: '#2563eb', color: '#fff', borderRadius: 7, fontWeight: 700, fontSize: '.85rem', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>→</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.3)' }}>
+            © 2025 AlgorithmicRecourse · CHARM Lab, University of Waterloo
+          </span>
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+            {['Privacy', 'Terms', 'Contact'].map(l => (
+              <a key={l} href="#" style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.28)', textDecoration: 'none', transition: 'color .15s' }}
+                onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,.7)'}
+                onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.28)'}>{l}</a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   APP ROOT
+═══════════════════════════════════════════════ */
+function App() {
+  return (
+    <>
+      <Nav />
+      <Hero />
+      <WhatIsRecourse />
+      <Pillars />
+      <InteractiveResearch />
+      <Methods />
+      <Benchmark />
+      <Sandbox />
+      <OpenProblems />
+      <Learn />
+      <Footer />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
