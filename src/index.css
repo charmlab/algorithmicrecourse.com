@@ -1,0 +1,90 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Form controls ── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.2); }
+select { font-family: inherit; }
+
+/* ── Keyframes ── */
+@keyframes fadeUp    { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideLeft { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pathDraw  { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
+@keyframes pulse     { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes float     { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes spin      { to { transform: rotate(360deg); } }
+
+/* ── Utility animation classes ── */
+.fade-up   { animation: fadeUp   0.65s ease both; }
+.fade-in   { animation: fadeIn   0.5s  ease both; }
+.slide-left{ animation: slideLeft 0.5s ease both; }
+
+/* ── Reusable chip ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+/* ── Track column (desktop independent scroll) ── */
+@media (min-width: 1024px) {
+  .track-col {
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Card hover lift ── */
+.card-lift { transition: transform 0.22s ease, box-shadow 0.22s ease; }
+.card-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08); }
+
+/* ── Idea card ── */
+.idea-card { transition: border-color 0.2s, background 0.2s; }
+.idea-card:hover { border-color: #93c5fd; background: #f8faff; }
+
+/* ── Upvote ── */
+.upvote-btn { transition: all 0.15s; }
+.upvote-btn:hover { transform: scale(1.08); }
+.upvote-btn.voted { color: #2563eb; }
