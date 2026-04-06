@@ -24,10 +24,10 @@ export default function ResearchTrack() {
           Track 1 · Researchers
         </span>
         <h2 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-.03em', marginBottom: '.5rem' }}>
-          Explore Research
+          Research
         </h2>
         <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.65 }}>
-          Map the field. Search 150+ papers. Propose new directions.
+          Survey core papers, compare methodological families, and identify open questions worth pursuing.
         </p>
       </div>
 

@@ -9,7 +9,12 @@ export default function Nav() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  const links = ['Research', 'Build', 'Deploy', 'About'];
+  const links = [
+    { label: 'About', href: '#about' },
+    { label: 'Paths', href: '#paths' },
+    { label: 'Research', href: '#research-panel' },
+    { label: 'Deploy', href: '#deploy-panel' },
+  ];
 
   return (
     <nav style={{
@@ -35,12 +40,12 @@ export default function Nav() {
 
         {/* Links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem' }}>
-          {links.map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`}
+          {links.map((link) => (
+            <a key={link.label} href={link.href}
                style={{ fontSize: '.85rem', fontWeight: 600, color: '#475569', textDecoration: 'none', transition: 'color .15s' }}
                onMouseEnter={e => e.currentTarget.style.color = '#0f172a'}
                onMouseLeave={e => e.currentTarget.style.color = '#475569'}>
-              {l}
+              {link.label}
             </a>
           ))}
           <a href="https://github.com/charmlab" target="_blank" rel="noopener noreferrer"

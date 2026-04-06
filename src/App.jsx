@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Nav from './components/Nav.jsx';
 import Hero from './components/hero/Hero.jsx';
-import TrackTabs from './components/TrackTabs.jsx';
+import WhyRecourse from './components/WhyRecourse.jsx';
+import FeaturedResources from './components/FeaturedResources.jsx';
+import PathCards from './components/PathCards.jsx';
 import ResearchTrack from './components/tracks/ResearchTrack/index.jsx';
 import BuildTrack from './components/tracks/BuildTrack/index.jsx';
 import DeployTrack from './components/tracks/DeployTrack/index.jsx';
@@ -9,74 +11,100 @@ import Footer from './components/Footer.jsx';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('research');
-  const [isMobile, setIsMobile]   = useState(false);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  const TRACK_HEADERS = [
-    { key: 'research', label: 'Explore Research',   icon: '🔬', color: '#2563eb' },
-    { key: 'build',    label: 'Build with Recourse', icon: '⚙',  color: '#7c3aed' },
-    { key: 'deploy',   label: 'Deploy',              icon: '🏢', color: '#059669' },
+  const TRACKS = [
+    {
+      key: 'research',
+      label: 'Research',
+      kicker: 'Map the field',
+      title: 'Survey the literature and identify open questions.',
+      description: 'For scholars and advanced readers who need foundations, distinctions, and a clear view of the active research landscape.',
+      bullets: ['Search seminal papers and newer threads', 'Compare causal, optimization, and game-theoretic approaches', 'Capture open problems worth pursuing'],
+      cta: 'Explore research',
+      color: '#2453a6',
+      softColor: '#dbe7ff',
+      panelId: 'research-panel',
+      component: <ResearchTrack />,
+    },
+    {
+      key: 'build',
+      label: 'Build',
+      kicker: 'Prototype confidently',
+      title: 'Move from theory into implementation patterns.',
+      description: 'For builders evaluating methods, metrics, and packages before integrating recourse into real model pipelines.',
+      bullets: ['Compare methods by assumptions and tradeoffs', 'Inspect evaluation metrics before choosing a benchmark', 'Find practical package starting points'],
+      cta: 'See implementation guidance',
+      color: '#8a4b18',
+      softColor: '#f7e5d1',
+      panelId: 'build-panel',
+      component: <BuildTrack />,
+    },
+    {
+      key: 'deploy',
+      label: 'Deploy',
+      kicker: 'Operate responsibly',
+      title: 'Translate recourse into product, policy, and governance.',
+      description: 'For leaders and deployment teams aligning user experience, compliance, and institutional value.',
+      bullets: ['Connect technical metrics to business outcomes', 'Understand governance and audit implications', 'Frame recourse as an organizational capability'],
+      cta: 'Review deployment guidance',
+      color: '#1d7a55',
+      softColor: '#dff3ea',
+      panelId: 'deploy-panel',
+      component: <DeployTrack />,
+    },
   ];
+
+  const activeTrack = TRACKS.find((track) => track.key === activeTab) ?? TRACKS[0];
 
   return (
     <>
       <Nav />
       <Hero />
+      <main className="page-shell">
+        <WhyRecourse />
+        <FeaturedResources />
+        <PathCards activePath={activeTab} setActivePath={setActiveTab} tracks={TRACKS} />
 
-      <section style={{ borderTop: '1px solid #e2e8f0' }}>
-        {/* Section intro */}
-        <div style={{ textAlign: 'center', padding: '3rem 2rem 0' }}>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: '.6rem' }}>
-            Choose Your Path
-          </div>
-          <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: '.6rem' }}>
-            Three Tracks, One Mission
-          </h2>
-          <p style={{ fontSize: '1rem', color: '#64748b', maxWidth: 560, margin: '0 auto', lineHeight: 1.7 }}>
-            Whether you study recourse, build it, or deploy it — find exactly what you need.
-          </p>
-        </div>
-
-        {/* Mobile: tab switcher */}
-        {isMobile && <TrackTabs active={activeTab} setActive={setActiveTab} />}
-
-        {isMobile ? (
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            {activeTab === 'research' && <ResearchTrack />}
-            {activeTab === 'build'    && <BuildTrack />}
-            {activeTab === 'deploy'   && <DeployTrack />}
-          </div>
-        ) : (
-          /* Desktop: 3 independently-scrollable columns */
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
-            {/* Column label row */}
-            <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #e2e8f0' }}>
-              {TRACK_HEADERS.map((col, i) => (
-                <a key={col.key} href={`#${col.key}`}
-                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '1rem',
-                     borderRight: i < 2 ? '1px solid #e2e8f0' : 'none', background: '#f8fafc', textDecoration: 'none',
-                     transition: 'background .2s' }}
-                   onMouseEnter={e => e.currentTarget.style.background = '#fff'}
-                   onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
-                  <span style={{ fontSize: '1.1rem' }}>{col.icon}</span>
-                  <span style={{ fontWeight: 800, fontSize: '.88rem', color: col.color }}>{col.label}</span>
-                </a>
+        <section id={activeTrack.panelId} className="section-shell active-track-shell">
+          <div className="active-track-header">
+            <div>
+              <span className="eyebrow">Active Path</span>
+              <h2>{activeTrack.label}</h2>
+            </div>
+            <div className="active-track-switcher">
+              {TRACKS.map((track) => (
+                <button
+                  key={track.key}
+                  type="button"
+                  className={track.key === activeTab ? 'active' : ''}
+                  onClick={() => setActiveTab(track.key)}
+                >
+                  {track.label}
+                </button>
               ))}
             </div>
-
-            {/* Track columns */}
-            <div id="research" className="track-col" style={{ borderRight: '1px solid #e2e8f0' }}><ResearchTrack /></div>
-            <div id="build"    className="track-col" style={{ borderRight: '1px solid #e2e8f0' }}><BuildTrack /></div>
-            <div id="deploy"   className="track-col"><DeployTrack /></div>
           </div>
-        )}
-      </section>
+
+          <div className="active-track-hero card-lift">
+            <div>
+              <span className="path-badge" style={{ background: activeTrack.softColor, color: activeTrack.color }}>
+                {activeTrack.kicker}
+              </span>
+              <h3>{activeTrack.title}</h3>
+              <p>{activeTrack.description}</p>
+            </div>
+            <ul>
+              {activeTrack.bullets.map((bullet) => (
+                <li key={bullet}>{bullet}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="track-panel">
+            {activeTrack.component}
+          </div>
+        </section>
+      </main>
 
       <Footer />
     </>

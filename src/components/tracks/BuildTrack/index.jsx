@@ -11,13 +11,13 @@ export default function BuildTrack() {
     <div style={{ padding: '2rem 1.5rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <span className="chip" style={{ background: '#ede9fe', color: '#6d28d9', marginBottom: 12, display: 'inline-block' }}>
-          Track 2 · Practitioners
+          Track 2 · Builders
         </span>
         <h2 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-.03em', marginBottom: '.5rem' }}>
-          Build with Recourse
+          Build
         </h2>
         <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.65 }}>
-          Interactive benchmarks, code, and evaluation tools.
+          Evaluate methods, benchmark assumptions, and choose implementation patterns with fewer blind spots.
         </p>
       </div>
 

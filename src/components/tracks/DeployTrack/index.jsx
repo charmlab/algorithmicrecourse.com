@@ -6,13 +6,13 @@ export default function DeployTrack() {
     <div style={{ padding: '2rem 1.5rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <span className="chip" style={{ background: '#dcfce7', color: '#166534', marginBottom: 12, display: 'inline-block' }}>
-          Track 3 · Executives
+          Track 3 · Decision-makers
         </span>
         <h2 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-.03em', marginBottom: '.5rem' }}>
-          Deploy in Your Organization
+          Deploy
         </h2>
         <p style={{ fontSize: '.88rem', color: '#64748b', lineHeight: 1.65 }}>
-          From algorithmic metrics to business ROI, compliance, and retention.
+          Connect model behavior to governance, product design, institutional trust, and measurable business value.
         </p>
       </div>
 
