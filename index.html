@@ -3,238 +3,249 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Algorithmic Recourse — Understanding, Evaluating, and Improving AI Decisions</title>
-  <meta name="description" content="Interactive tools, benchmarks, and research for actionable, reliable algorithmic recourse. CHARM Lab, University of Waterloo." />
+  <title>Algorithmic Recourse — Turn AI Rejections into Actionable Paths</title>
+  <meta name="description" content="The comprehensive hub for algorithmic recourse: research, tools, and enterprise deployment. CHARM Lab, University of Waterloo." />
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
-  <!-- React -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-
-  <!-- KaTeX -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.3/Recharts.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; font-size: 16px; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #fff;
-      color: #111827;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #ffffff; color: #0f172a;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       overflow-x: hidden;
     }
 
-    /* ── Canvas ── */
-    #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    /* ── scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
 
-    /* ── Range inputs ── */
-    input[type=range] {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 4px; border-radius: 2px;
-      background: #e5e7eb; outline: none; cursor: pointer;
+    /* ── range inputs ── */
+    input[type=range] { -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:#e2e8f0; outline:none; cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#2563eb; cursor:pointer; }
+
+    /* ── select ── */
+    select { font-family: inherit; }
+
+    /* ── animations ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes slideLeft { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes pathDraw { from{stroke-dashoffset:600} to{stroke-dashoffset:0} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    @keyframes typewriter { from{width:0} to{width:100%} }
+    @keyframes blink { 50%{border-color:transparent} }
+
+    .fade-up { animation: fadeUp .65s ease both; }
+    .fade-in { animation: fadeIn .5s ease both; }
+    .slide-left { animation: slideLeft .5s ease both; }
+
+    /* ── cards ── */
+    .card-lift { transition: transform .22s ease, box-shadow .22s ease; }
+    .card-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.08); }
+
+    /* ── tag chips ── */
+    .chip { display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 10px; border-radius:99px; white-space:nowrap; }
+
+    /* ── terminal ── */
+    .terminal-line::before { content:'$ '; color:#4ade80; font-weight:600; }
+    .terminal-comment::before { content:'# '; color:#6b7280; }
+
+    /* ── persona track headers ── */
+    .track-badge { font-size:.65rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; padding:4px 12px; border-radius:99px; }
+
+    /* ── independent scroll columns ── */
+    @media (min-width: 1024px) {
+      .tracks-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+        min-height: 100vh;
+      }
+      .track-col {
+        height: calc(100vh - 64px);
+        overflow-y: auto;
+        position: sticky;
+        top: 64px;
+        border-right: 1px solid #e2e8f0;
+        scroll-behavior: smooth;
+      }
+      .track-col:last-child { border-right: none; }
     }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 16px; height: 16px; border-radius: 50%;
-      background: #2563eb; cursor: pointer;
-      transition: background .15s, transform .15s;
-    }
-    input[type=range]::-webkit-slider-thumb:hover { background: #1d4ed8; transform: scale(1.2); }
-    input[type=range]::-moz-range-thumb {
-      width: 16px; height: 16px; border-radius: 50%;
-      background: #2563eb; cursor: pointer; border: none;
+
+    /* ── mobile tabs ── */
+    .tab-btn { transition: all .2s; }
+    .tab-btn-active {
+      background: #0f172a; color: #ffffff;
+      box-shadow: 0 4px 16px rgba(15,23,42,.2);
     }
 
-    /* ── Animations ── */
-    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes floatNode { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
-    @keyframes arrowPulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
-    @keyframes glowDelta {
-      0%,100% { box-shadow:0 0 0 0 rgba(37,99,235,0); }
-      50% { box-shadow:0 0 0 8px rgba(37,99,235,.12); }
+    /* ── tooltip ── */
+    .tooltip-trigger { position:relative; cursor:help; border-bottom:1px dotted #94a3b8; }
+    .tooltip-box {
+      position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+      background:#0f172a; color:#fff; padding:8px 12px; border-radius:8px;
+      font-size:.75rem; line-height:1.5; white-space:nowrap; max-width:280px;
+      pointer-events:none; opacity:0; transition:opacity .2s;
+      z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.2);
     }
-    @keyframes barFill { from { width: 0; } to { width: var(--w); } }
-    @keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+    .tooltip-trigger:hover .tooltip-box { opacity:1; }
 
-    .fade-up { animation: fadeUp .7s ease both; }
-    .float-node { animation: floatNode 3s ease-in-out infinite; }
-    .arrow-pulse { animation: arrowPulse 1.8s ease-in-out infinite; }
-    .glow-delta { animation: glowDelta 2.2s ease-in-out infinite; }
+    /* ── upvote button ── */
+    .upvote-btn { transition: all .15s; }
+    .upvote-btn:hover { transform: scale(1.08); }
+    .upvote-btn.voted { color: #2563eb; }
 
-    /* ── Cards ── */
-    .card-hover { transition: transform .22s ease, box-shadow .22s ease; }
-    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.09); }
-
-    /* ── Math block ── */
-    .math-display { display:inline-block; padding:.9rem 1.4rem; background:#f8faff; border-left:3px solid #2563eb; border-radius:0 6px 6px 0; }
-
-    /* ── Tags ── */
-    .tag-chip {
-      display:inline-block; font-size:.68rem; font-weight:700;
-      letter-spacing:.06em; text-transform:uppercase;
-      padding:2px 9px; border-radius:99px;
-    }
-
-    /* ── Problem card ── */
-    .prob-card { border-left:3px solid #2563eb; transition:background .2s, border-color .2s; }
-    .prob-card:hover { background:#f8faff; border-color:#1d4ed8; }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width:5px; }
-    ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
-    ::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
-
-    /* ── Select ── */
-    select { font-family:inherit; }
-
-    /* ── Responsive helpers ── */
-    @media (max-width: 768px) {
-      .hide-mobile { display:none !important; }
-    }
+    /* ── idea card ── */
+    .idea-card { transition: border-color .2s, background .2s; }
+    .idea-card:hover { border-color: #93c5fd; background: #f8faff; }
   </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-/* ═══════════════════════════════════════════════
-   UTILS
-═══════════════════════════════════════════════ */
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+const { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip: RTooltip, ResponsiveContainer, CartesianGrid, Cell } = Recharts;
 
-function KatexSpan({ tex, display = false, style = {} }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (ref.current && window.katex) {
-      katex.render(tex, ref.current, { displayMode: display, throwOnError: false, strict: false });
-    }
-  }, [tex, display]);
-  return <span ref={ref} style={{ display: display ? 'block' : 'inline', ...style }} />;
-}
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
 
-/* ═══════════════════════════════════════════════
-   ANIMATED NETWORK CANVAS
-═══════════════════════════════════════════════ */
-function NetworkCanvas() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let raf;
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
+const PAPERS = [
+  { id:1,  title:"Counterfactual Explanations Without Opening the Black Box", authors:"Wachter, Mittelstadt & Russell", year:2017, approach:"Optimization", tags:["Foundational"], citations:1850 },
+  { id:2,  title:"Diverse Counterfactual Explanations (DiCE)", authors:"Mothilal, Sharma & Tan", year:2020, approach:"Gradient", tags:["Diverse","Actionable"], citations:920 },
+  { id:3,  title:"Algorithmic Recourse via Causal Models", authors:"Karimi, Schölkopf & Valera", year:2021, approach:"Causal", tags:["Causal","Robust"], citations:640 },
+  { id:4,  title:"FACE: Feasible and Actionable Counterfactual Explanations", authors:"Poyiadzi et al.", year:2020, approach:"Graph", tags:["Actionable","Fair"], citations:380 },
+  { id:5,  title:"Actionable Recourse in Linear Classification", authors:"Ustun, Spangher & Liu", year:2019, approach:"Optimization", tags:["Foundational","Fair"], citations:720 },
+  { id:6,  title:"Robust Algorithmic Recourse (ROAR)", authors:"Upadhyay, Joshi & Lakkaraju", year:2021, approach:"Optimization", tags:["Robust"], citations:310 },
+  { id:7,  title:"Algorithmic Recourse Under Imperfect Causal Knowledge", authors:"Karimi et al.", year:2020, approach:"Causal", tags:["Causal","Privacy"], citations:280 },
+  { id:8,  title:"Beyond Individualized Recourse", authors:"Rawal et al.", year:2021, approach:"Optimization", tags:["Fair","Actionable"], citations:195 },
+  { id:9,  title:"Consequential Recommendations and Recourse", authors:"Perdomo et al.", year:2020, approach:"Game-Theoretic", tags:["Robust","Foundational"], citations:410 },
+  { id:10, title:"CERTIFAI: Counterfactual Explanations for Robustness", authors:"Sharma et al.", year:2020, approach:"Optimization", tags:["Robust","Diverse"], citations:250 },
+  { id:11, title:"Multi-Objective Counterfactual Explanations", authors:"Dandl et al.", year:2020, approach:"Optimization", tags:["Diverse","Actionable"], citations:230 },
+  { id:12, title:"Preserving Causal Constraints in Counterfactual Explanations", authors:"Mahajan et al.", year:2020, approach:"Causal", tags:["Causal","Actionable"], citations:340 },
+  { id:13, title:"The Hidden Assumptions Behind Counterfactual Explanations", authors:"Barocas et al.", year:2020, approach:"Theoretical", tags:["Foundational","Fair"], citations:580 },
+  { id:14, title:"Recourse for Privacy-Preserving Models", authors:"von Kügelgen et al.", year:2022, approach:"Causal", tags:["Privacy","Causal"], citations:120 },
+  { id:15, title:"Strategic Behavior and Algorithmic Recourse", authors:"Tsirtsis & Gomez-Rodriguez", year:2020, approach:"Game-Theoretic", tags:["Robust","Fair"], citations:175 },
+  { id:16, title:"GeCo: Quality Counterfactual Explanations", authors:"Schleich et al.", year:2021, approach:"Optimization", tags:["Actionable","Diverse"], citations:160 },
+];
 
-    const N = 42;
-    const nodes = Array.from({ length: N }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      r: 1.5 + Math.random() * 2,
-    }));
+const APPROACHES = ["All", "Optimization", "Gradient", "Causal", "Graph", "Game-Theoretic", "Theoretical"];
+const FOCUS_TAGS = ["All", "Causal", "Robust", "Fair", "Privacy", "Diverse", "Actionable", "Foundational"];
 
-    const tick = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      nodes.forEach(n => {
-        n.x += n.vx; n.y += n.vy;
-        if (n.x < 0 || n.x > canvas.width)  n.vx *= -1;
-        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
-      });
-      for (let i = 0; i < N; i++) {
-        for (let j = i + 1; j < N; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const d  = Math.sqrt(dx * dx + dy * dy);
-          if (d < 140) {
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(147,197,253,${(1 - d / 140) * 0.55})`;
-            ctx.lineWidth = .7;
-            ctx.stroke();
-          }
-        }
-      }
-      nodes.forEach(n => {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(147,197,253,0.75)';
-        ctx.fill();
-      });
-      raf = requestAnimationFrame(tick);
-    };
-    tick();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
-  }, []);
-  return <canvas ref={ref} id="hero-canvas" style={{ opacity: .2 }} />;
-}
+const IDEAS = [
+  { id:1, title:"Standardized recourse cost metric across tabular + image domains", category:"Metrics", votes:47, status:"open" },
+  { id:2, title:"Real-world deployment dataset from credit scoring pipelines", category:"Datasets", votes:38, status:"open" },
+  { id:3, title:"Benchmark for sequential / multi-step recourse", category:"Benchmarks", votes:34, status:"in-progress" },
+  { id:4, title:"Robustness evaluation under model retraining", category:"Metrics", votes:29, status:"open" },
+  { id:5, title:"Privacy-preserving recourse evaluation protocol", category:"Benchmarks", votes:23, status:"open" },
+  { id:6, title:"Human-subject study templates for recourse quality", category:"Datasets", votes:19, status:"planned" },
+];
 
-/* ═══════════════════════════════════════════════
+const METHODS_DATA = [
+  { name:"DiCE",         runtime:2.1,  validity:92, sparsity:3.2, model:"Any",       data:"Tabular",  color:"#2563eb", pkg:"dice-ml" },
+  { name:"Wachter",      runtime:1.4,  validity:88, sparsity:4.5, model:"Differentiable", data:"Tabular", color:"#7c3aed", pkg:"carla" },
+  { name:"FACE",         runtime:5.2,  validity:78, sparsity:2.1, model:"Any",       data:"Tabular",  color:"#059669", pkg:"carla" },
+  { name:"ROAR",         runtime:3.8,  validity:85, sparsity:3.8, model:"Any",       data:"Tabular",  color:"#dc2626", pkg:"carla" },
+  { name:"Causal",       runtime:6.5,  validity:82, sparsity:2.5, model:"Any",       data:"Tabular",  color:"#0891b2", pkg:"carla" },
+  { name:"GrowingSpheres",runtime:0.8, validity:75, sparsity:5.1, model:"Any",       data:"Tabular",  color:"#ca8a04", pkg:"carla" },
+  { name:"CERTIFAI",     runtime:8.2,  validity:90, sparsity:2.9, model:"Any",       data:"Tabular",  color:"#be185d", pkg:"certifai" },
+  { name:"AR (Ustun)",   runtime:0.5,  validity:95, sparsity:1.8, model:"Linear",    data:"Tabular",  color:"#4f46e5", pkg:"actionable-recourse" },
+  { name:"GeCo",         runtime:3.1,  validity:87, sparsity:2.3, model:"Any",       data:"Tabular",  color:"#9333ea", pkg:"carla" },
+  { name:"CRUDS",        runtime:4.0,  validity:80, sparsity:3.0, model:"Differentiable", data:"Tabular", color:"#f97316", pkg:"carla" },
+];
+
+const MODEL_TYPES = ["All", "Linear", "Tree-Based", "Differentiable", "Any"];
+const DATA_TYPES = ["All", "Tabular", "Image", "Text"];
+
+const METRICS_GLOSSARY = [
+  { term:"Validity", def:"Fraction of generated recourse actions that successfully flip the model's prediction to the desired outcome.", aka:"Success Rate" },
+  { term:"Cost / Proximity", def:"Average distance between the original input and the recourse counterfactual, measured in feature space (L1, L2, or weighted).", aka:"Distance" },
+  { term:"Sparsity", def:"Average number of features changed in each recourse action. Lower is better—users prefer fewer changes.", aka:"# Features Changed" },
+  { term:"Plausibility", def:"How likely a counterfactual is under the real data distribution. Implausible recourse suggests impossible feature combinations.", aka:"Realism" },
+  { term:"Robustness", def:"Probability that recourse remains valid under small perturbations of the model or input. Critical for regulatory compliance.", aka:"Stability" },
+];
+
+const BUSINESS_MAP = [
+  { metric:"Validity", business:"Customer Retention", icon:"↩", color:"#2563eb", colorBg:"#dbeafe",
+    detail:"Retain rejected applicants by giving them a feasible path to approval. Higher validity = more users successfully re-engage." },
+  { metric:"Sparsity", business:"User Trust & UX", icon:"✦", color:"#7c3aed", colorBg:"#ede9fe",
+    detail:"Provide simple, single-step actions rather than overwhelming users with 10 changes. Fewer steps = higher completion rates." },
+  { metric:"Robustness", business:"Regulatory Compliance", icon:"⛨", color:"#059669", colorBg:"#dcfce7",
+    detail:"Future-proof your models against EU AI Act requirements. Robust recourse survives model updates and audits." },
+  { metric:"Plausibility", business:"Brand Credibility", icon:"◈", color:"#dc2626", colorBg:"#fee2e2",
+    detail:"Never suggest impossible actions. Implausible recommendations erode trust and invite scrutiny from regulators." },
+];
+
+const MOCK_APPLICANT = {
+  name: "Sarah Chen", age: 34, income: 42000, creditScore: 610, debtRatio: 0.45,
+  employmentYears: 2.5, education: "Bachelor's", status: "Rejected",
+};
+
+const RECOURSE_PLANS = [
+  { method:"DiCE (Gradient)", color:"#2563eb", actions:[
+    { feature:"Annual Income", change:"+$8,200", direction:"↑", effort:"Medium" },
+    { feature:"Debt-to-Income", change:"−12%", direction:"↓", effort:"Medium" },
+  ], validity:"94%", cost:"Low" },
+  { method:"Causal Recourse", color:"#059669", actions:[
+    { feature:"Annual Income", change:"+$5,000", direction:"↑", effort:"Low" },
+    { feature:"Employment Duration", change:"+6 months", direction:"↑", effort:"Low" },
+    { feature:"Credit Utilization", change:"−8%", direction:"↓", effort:"Low" },
+  ], validity:"88%", cost:"Very Low" },
+  { method:"ROAR (Robust)", color:"#dc2626", actions:[
+    { feature:"Annual Income", change:"+$12,500", direction:"↑", effort:"High" },
+  ], validity:"97%", cost:"High" },
+];
+
+/* ═══════════════════════════════════════
    NAV
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 48);
-    window.addEventListener('scroll', fn);
-    return () => window.removeEventListener('scroll', fn);
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', fn); return () => window.removeEventListener('scroll', fn);
   }, []);
-
-  const links = ['Methods', 'Benchmark', 'Demo', 'Research', 'Problems'];
-  const s = {
-    nav: {
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-      background: scrolled ? 'rgba(255,255,255,.97)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(14px)' : 'none',
-      borderBottom: scrolled ? '1px solid #e5e7eb' : 'none',
-      transition: 'all .3s',
-    },
-    inner: { maxWidth: 1200, margin: '0 auto', padding: '0 2rem', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-    logo: { display: 'flex', alignItems: 'center', gap: 9 },
-    logoText: { fontWeight: 800, fontSize: '.9rem', color: scrolled ? '#111827' : '#fff', letterSpacing: '-.02em' },
-    linkColor: scrolled ? '#4b5563' : 'rgba(255,255,255,.82)',
-  };
-
   return (
-    <nav style={s.nav}>
-      <div style={s.inner}>
-        <div style={s.logo}>
-          <div style={{ width: 30, height: 30, background: '#2563eb', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="3.5" cy="8" r="2" fill="white"/>
-              <circle cx="12.5" cy="3.5" r="2" fill="white"/>
-              <circle cx="12.5" cy="12.5" r="2" fill="white"/>
-              <line x1="5.5" y1="8" x2="10.5" y2="4.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
-              <line x1="5.5" y1="8" x2="10.5" y2="11.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+    <nav style={{
+      position:'fixed', top:0, left:0, right:0, zIndex:200, height:64,
+      background: scrolled ? 'rgba(255,255,255,.97)' : 'rgba(255,255,255,.6)',
+      backdropFilter:'blur(16px)', borderBottom: scrolled ? '1px solid #e2e8f0' : '1px solid transparent',
+      transition:'all .3s', padding:'0 2rem',
+    }}>
+      <div style={{ maxWidth:1440, margin:'0 auto', height:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ width:32, height:32, background:'linear-gradient(135deg,#1e3a8a,#2563eb)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 9h4l2-5 2 10 2-5h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span style={s.logoText}>AlgorithmicRecourse</span>
+          <span style={{ fontWeight:800, fontSize:'.95rem', color:'#0f172a', letterSpacing:'-.02em' }}>AlgorithmicRecourse</span>
         </div>
-
-        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          {links.map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`}
-               style={{ fontSize: '.85rem', fontWeight: 500, color: s.linkColor, textDecoration: 'none', transition: 'color .15s' }}
-               onMouseEnter={e => e.currentTarget.style.color = scrolled ? '#111827' : '#fff'}
-               onMouseLeave={e => e.currentTarget.style.color = s.linkColor}>{l}</a>
+        <div style={{ display:'flex', alignItems:'center', gap:'1.75rem' }}>
+          {['Research','Build','Deploy','About'].map(l=>(
+            <a key={l} href={`#${l.toLowerCase()}`} style={{ fontSize:'.85rem', fontWeight:600, color:'#475569', textDecoration:'none', transition:'color .15s' }}
+              onMouseEnter={e=>e.currentTarget.style.color='#0f172a'}
+              onMouseLeave={e=>e.currentTarget.style.color='#475569'}>{l}</a>
           ))}
-          <a href="#demo" style={{ padding: '8px 20px', background: '#2563eb', color: '#fff', borderRadius: 7, fontWeight: 600, fontSize: '.85rem', textDecoration: 'none', boxShadow: '0 2px 12px rgba(37,99,235,.35)', transition: 'background .2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#1d4ed8'}
-            onMouseLeave={e => e.currentTarget.style.background = '#2563eb'}>
-            Try Demo
+          <a href="https://github.com/charmlab" target="_blank" rel="noopener" style={{
+            padding:'8px 18px', background:'#0f172a', color:'#fff', borderRadius:8, fontSize:'.85rem', fontWeight:700, textDecoration:'none',
+            transition:'background .2s', display:'flex', alignItems:'center', gap:6
+          }} onMouseEnter={e=>e.currentTarget.style.background='#1e3a8a'} onMouseLeave={e=>e.currentTarget.style.background='#0f172a'}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
           </a>
         </div>
       </div>
@@ -242,821 +253,638 @@ function Nav() {
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    HERO
-═══════════════════════════════════════════════ */
-function FlowNode({ label, sub, accent, delay = 0 }) {
-  const [hovered, setHovered] = useState(false);
+═══════════════════════════════════════ */
+function HeroPathVisual() {
   return (
-    <div
-      className={accent ? 'glow-delta' : 'float-node'}
-      style={{ animationDelay: `${delay}s`, textAlign: 'center', padding: '10px 16px', minWidth: 88, borderRadius: 9,
-        background: accent ? 'rgba(37,99,235,.25)' : sub === 'y*' ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.08)',
-        border: `1px solid ${accent ? 'rgba(37,99,235,.6)' : sub === 'y*' ? 'rgba(16,185,129,.4)' : 'rgba(255,255,255,.14)'}`,
-        transition: 'transform .2s',
-        cursor: 'default',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div style={{ fontSize: '.65rem', color: 'rgba(255,255,255,.45)', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700, marginBottom: 3 }}>{label}</div>
-      <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic', fontSize: '1.35rem', fontWeight: 700,
-        color: accent ? '#93c5fd' : sub === 'y*' ? '#6ee7b7' : '#fff',
-      }}>{sub}</div>
-    </div>
+    <svg viewBox="0 0 500 200" style={{ width:'100%', maxWidth:520, height:'auto' }}>
+      {/* Blocked path */}
+      <path d="M40 140 Q120 140 160 100" stroke="#ef4444" strokeWidth="3" fill="none" strokeLinecap="round" opacity=".5"/>
+      <rect x="155" y="80" width="40" height="40" rx="4" fill="#fecaca" stroke="#ef4444" strokeWidth="2"/>
+      <text x="175" y="105" textAnchor="middle" fill="#dc2626" fontSize="18" fontWeight="700">✕</text>
+      <text x="50" y="170" fill="#94a3b8" fontSize="11" fontFamily="Inter,sans-serif" fontWeight="600">REJECTED</text>
+
+      {/* Rerouted path */}
+      <path d="M40 140 Q100 140 140 110 Q180 80 220 60 Q280 30 340 50 Q400 70 460 60"
+            stroke="#2563eb" strokeWidth="3" fill="none" strokeLinecap="round"
+            strokeDasharray="600" style={{ animation:'pathDraw 2s ease forwards' }}/>
+
+      {/* Waypoints */}
+      {[[220,60,'δ₁'],[340,50,'δ₂'],[460,60,'✓']].map(([cx,cy,label],i) => (
+        <g key={i}>
+          <circle cx={cx} cy={cy} r={label==='✓' ? 18 : 14} fill={label==='✓' ? '#dcfce7' : '#dbeafe'}
+                  stroke={label==='✓' ? '#16a34a' : '#2563eb'} strokeWidth="2"
+                  style={{ animation:`float 2.5s ease-in-out ${i*.3}s infinite` }}/>
+          <text x={cx} y={cy+4} textAnchor="middle" fill={label==='✓'?'#16a34a':'#2563eb'}
+                fontSize={label==='✓' ? 14 : 11} fontWeight="700" fontFamily="Georgia,serif"
+                fontStyle={label==='✓'?'normal':'italic'}>{label}</text>
+        </g>
+      ))}
+
+      {/* Labels */}
+      <text x="340" y="18" textAnchor="middle" fill="#16a34a" fontSize="11" fontWeight="700" fontFamily="Inter,sans-serif">APPROVED</text>
+      <text x="240" y="95" fill="#64748b" fontSize="9.5" fontWeight="600" fontFamily="Inter,sans-serif">recourse path</text>
+
+      {/* Person icon */}
+      <circle cx="40" cy="128" r="9" fill="#f1f5f9" stroke="#94a3b8" strokeWidth="1.5"/>
+      <circle cx="40" cy="125" r="3" fill="#64748b"/>
+      <path d="M33 136 Q40 130 47 136" stroke="#64748b" strokeWidth="1.5" fill="none"/>
+    </svg>
   );
 }
 
 function Hero() {
   return (
     <section style={{
-      position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(145deg, #060d20 0%, #0c1a40 55%, #071224 100%)',
-      overflow: 'hidden', padding: '8rem 2rem 6rem',
+      paddingTop:'6.5rem', paddingBottom:'4rem', background:'linear-gradient(180deg,#f8fafc 0%,#ffffff 100%)',
+      position:'relative', overflow:'hidden',
     }}>
-      <NetworkCanvas />
-
-      {/* Grid overlay */}
+      {/* Subtle grid */}
       <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'linear-gradient(rgba(37,99,235,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,.05) 1px, transparent 1px)',
-        backgroundSize: '64px 64px',
-      }} />
+        position:'absolute', inset:0, pointerEvents:'none',
+        backgroundImage:'linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)',
+        backgroundSize:'80px 80px', opacity:.3,
+        maskImage:'radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent)',
+      }}/>
 
-      {/* Radial glow */}
-      <div style={{
-        position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: 700, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(ellipse, rgba(37,99,235,.12) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
+      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 2rem', position:'relative', zIndex:2 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'4rem', alignItems:'center' }}>
 
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 880, textAlign: 'center' }} className="fade-up">
+          {/* Left */}
+          <div className="fade-up">
+            <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'5px 14px', background:'#dbeafe', borderRadius:99, marginBottom:'1.5rem' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'#2563eb', animation:'pulse 2s ease infinite' }}/>
+              <span style={{ fontSize:'.72rem', fontWeight:700, color:'#1d4ed8', letterSpacing:'.08em', textTransform:'uppercase' }}>CHARM Lab · University of Waterloo</span>
+            </div>
+            <h1 style={{ fontSize:'clamp(2.4rem,4.5vw,3.6rem)', fontWeight:900, letterSpacing:'-.04em', lineHeight:1.1, color:'#0f172a', marginBottom:'1.5rem' }}>
+              Turn AI Rejections
+              <br/>into <span style={{ background:'linear-gradient(90deg,#2563eb,#7c3aed)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Actionable Paths</span>
+            </h1>
+            <p style={{ fontSize:'1.12rem', color:'#475569', lineHeight:1.78, maxWidth:520, marginBottom:'2.25rem' }}>
+              The comprehensive research hub for algorithmic recourse — bridging academic theory, engineering practice, and enterprise deployment.
+            </p>
 
-        {/* Badge */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: '1.75rem',
-          padding: '6px 16px', background: 'rgba(37,99,235,.15)', border: '1px solid rgba(37,99,235,.3)', borderRadius: 99 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#60a5fa', animation: 'dotPulse 2s ease infinite' }} />
-          <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#93c5fd', letterSpacing: '.1em', textTransform: 'uppercase' }}>
-            Research Platform · CHARM Lab, University of Waterloo
-          </span>
+            {/* Persona quick-jump */}
+            <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+              {[
+                {label:'I\'m a Researcher', color:'#2563eb', bg:'#dbeafe', href:'#research'},
+                {label:'I\'m a Practitioner', color:'#7c3aed', bg:'#ede9fe', href:'#build'},
+                {label:'I\'m a Decision-Maker', color:'#059669', bg:'#dcfce7', href:'#deploy'},
+              ].map(b=>(
+                <a key={b.label} href={b.href} style={{
+                  padding:'11px 22px', background:b.bg, color:b.color, borderRadius:10, fontWeight:700, fontSize:'.88rem', textDecoration:'none',
+                  border:`1.5px solid ${b.color}22`, transition:'all .2s',
+                }} onMouseEnter={e=>{e.currentTarget.style.background=b.color; e.currentTarget.style.color='#fff';}}
+                   onMouseLeave={e=>{e.currentTarget.style.background=b.bg; e.currentTarget.style.color=b.color;}}>
+                  {b.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — Visual */}
+          <div className="fade-up" style={{ animationDelay:'.2s' }}>
+            <HeroPathVisual />
+          </div>
         </div>
 
-        {/* Headline */}
-        <h1 style={{ fontSize: 'clamp(2.2rem,5vw,3.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1.14, letterSpacing: '-.03em', marginBottom: '1.4rem' }}>
-          Algorithmic Recourse
-          <br />
-          <span style={{ background: 'linear-gradient(90deg,#93c5fd,#a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Understanding, Evaluating,
-          </span>
-          <br />
-          and Improving Decisions Made by AI
-        </h1>
-
-        <p style={{ fontSize: '1.1rem', color: 'rgba(255,255,255,.6)', maxWidth: 600, margin: '0 auto 2.75rem', lineHeight: 1.78, fontWeight: 400 }}>
-          From theory to deployment: interactive tools, benchmarks, and research for actionable, reliable recourse.
-        </p>
-
-        {/* CTAs */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: '4.5rem' }}>
-          <a href="#methods"
-            style={{ padding: '13px 28px', background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.92rem', textDecoration: 'none', boxShadow: '0 4px 24px rgba(37,99,235,.45)', transition: 'all .2s' }}
-            onMouseEnter={e => { e.currentTarget.style.background='#1d4ed8'; e.currentTarget.style.transform='translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background='#2563eb'; e.currentTarget.style.transform='translateY(0)'; }}>
-            Explore Methods
-          </a>
-          <a href="#demo"
-            style={{ padding: '13px 28px', background: 'rgba(255,255,255,.08)', color: '#fff', border: '1px solid rgba(255,255,255,.18)', borderRadius: 8, fontWeight: 600, fontSize: '.92rem', textDecoration: 'none', backdropFilter: 'blur(8px)', transition: 'all .2s' }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,.15)'; e.currentTarget.style.transform='translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,.08)'; e.currentTarget.style.transform='translateY(0)'; }}>
-            Try Interactive Demo
-          </a>
-        </div>
-
-        {/* Flow Diagram */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>
+        {/* Stats bar */}
+        <div style={{
+          display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1.5rem', marginTop:'4rem',
+          padding:'1.75rem 2rem', background:'#fff', borderRadius:14, border:'1px solid #e2e8f0',
+          boxShadow:'0 4px 24px rgba(0,0,0,.04)',
+        }}>
           {[
-            { label: 'Input', sub: 'x', delay: 0 },
-            null,
-            { label: 'Model', sub: 'f(·)', delay: 0.3 },
-            null,
-            { label: 'Decision', sub: 'y', delay: 0.6 },
-            null,
-            { label: 'Recourse', sub: 'δ', accent: true, delay: 0.9 },
-            null,
-            { label: 'New Outcome', sub: 'y*', delay: 1.2 },
-          ].map((item, i) =>
-            item === null
-              ? <div key={i} className="arrow-pulse" style={{ color: 'rgba(147,197,253,.65)', fontSize: '1.3rem', fontWeight: 300, padding: '0 2px' }}>→</div>
-              : <FlowNode key={i} {...item} />
-          )}
+            {n:'150+', l:'Research Papers'},
+            {n:'10+',  l:'Benchmark Methods'},
+            {n:'5',    l:'Evaluation Metrics'},
+            {n:'3',    l:'Persona Tracks'},
+          ].map(s=>(
+            <div key={s.l} style={{ textAlign:'center' }}>
+              <div style={{ fontSize:'1.7rem', fontWeight:900, color:'#0f172a', letterSpacing:'-.03em' }}>{s.n}</div>
+              <div style={{ fontSize:'.78rem', color:'#64748b', fontWeight:600, marginTop:2 }}>{s.l}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-/* ═══════════════════════════════════════════════
-   WHAT IS RECOURSE
-═══════════════════════════════════════════════ */
-function RecourseSlider() {
-  const [income, setIncome] = useState(38);
-  const [education, setEducation] = useState(12);
-  const [employment, setEmployment] = useState(18);
+/* ═══════════════════════════════════════
+   TRACK SELECTOR (mobile)
+═══════════════════════════════════════ */
+function TrackTabs({ active, setActive }) {
+  const tabs = [
+    { key:'research',    label:'Explore Research',   icon:'🔬', color:'#2563eb' },
+    { key:'build',       label:'Build with Recourse', icon:'⚙',  color:'#7c3aed' },
+    { key:'deploy',      label:'Deploy',             icon:'🏢', color:'#059669' },
+  ];
+  return (
+    <div style={{ display:'flex', gap:8, justifyContent:'center', padding:'1rem 1rem', background:'#f8fafc', borderBottom:'1px solid #e2e8f0', position:'sticky', top:64, zIndex:100 }}>
+      {tabs.map(t=>(
+        <button key={t.key} onClick={()=>setActive(t.key)}
+          className={`tab-btn ${active===t.key?'tab-btn-active':''}`}
+          style={{
+            padding:'10px 20px', borderRadius:10, border:'1.5px solid', fontWeight:700, fontSize:'.82rem', cursor:'pointer', fontFamily:'inherit',
+            borderColor: active===t.key ? '#0f172a' : '#e2e8f0',
+            background: active===t.key ? '#0f172a' : '#fff',
+            color: active===t.key ? '#fff' : '#475569',
+          }}>
+          <span style={{ marginRight:6 }}>{t.icon}</span>{t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-  const score = income * 0.45 + education * 2.5 + employment * 0.25;
-  const threshold = 70;
-  const approved = score >= threshold;
-  const pct = Math.min(100, Math.round((score / threshold) * 100));
+/* ═══════════════════════════════════════
+   TRACK 1: RESEARCH
+═══════════════════════════════════════ */
+function ResearchTrack() {
+  const [search, setSearch]     = useState('');
+  const [approach, setApproach] = useState('All');
+  const [focus, setFocus]       = useState('All');
+  const [votes, setVotes]       = useState({});
 
-  const recourseIncome = Math.ceil((threshold - education * 2.5 - employment * 0.25) / 0.45);
-  const recourseEdu   = Math.ceil((threshold - income * 0.45 - employment * 0.25) / 2.5);
+  const filtered = useMemo(() => {
+    return PAPERS.filter(p => {
+      const matchSearch = search === '' || p.title.toLowerCase().includes(search.toLowerCase()) || p.authors.toLowerCase().includes(search.toLowerCase());
+      const matchApproach = approach === 'All' || p.approach === approach;
+      const matchFocus = focus === 'All' || p.tags.includes(focus);
+      return matchSearch && matchApproach && matchFocus;
+    });
+  }, [search, approach, focus]);
+
+  const toggleVote = (id) => setVotes(prev => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div style={{ background: '#f8faff', border: '1px solid #dbeafe', borderRadius: 14, padding: '1.75rem' }}>
-      <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1.25rem' }}>
-        Interactive Example · Loan Decision
+    <div style={{ padding:'2rem 1.5rem' }}>
+      {/* Header */}
+      <div style={{ marginBottom:'2rem' }}>
+        <span className="track-badge" style={{ background:'#dbeafe', color:'#1d4ed8', marginBottom:12, display:'inline-block' }}>Track 1 · Researchers</span>
+        <h2 style={{ fontSize:'1.6rem', fontWeight:800, letterSpacing:'-.03em', marginBottom:'.5rem' }}>Explore Research</h2>
+        <p style={{ fontSize:'.88rem', color:'#64748b', lineHeight:1.65 }}>Map the field. Search 150+ papers. Propose new directions.</p>
       </div>
 
-      {[
-        { label: 'Annual Income ($k)', val: income, set: setIncome, min: 10, max: 120 },
-        { label: 'Education (years)',   val: education, set: setEducation, min: 6, max: 22 },
-        { label: 'Employment (months)', val: employment, set: setEmployment, min: 0, max: 120 },
-      ].map(({ label, val, set, min, max }) => (
-        <div key={label} style={{ marginBottom: '1.1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <span style={{ fontSize: '.82rem', color: '#374151', fontWeight: 500 }}>{label}</span>
-            <span style={{ fontSize: '.82rem', color: '#2563eb', fontWeight: 700, fontFamily: '"JetBrains Mono", monospace' }}>{val}</span>
+      {/* Search */}
+      <div style={{ marginBottom:'1.25rem' }}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search papers, authors..."
+          style={{ width:'100%', padding:'10px 14px', background:'#f1f5f9', border:'1.5px solid #e2e8f0', borderRadius:9, fontSize:'.88rem', outline:'none', fontFamily:'inherit', transition:'border-color .2s' }}
+          onFocus={e=>e.currentTarget.style.borderColor='#2563eb'}
+          onBlur={e=>e.currentTarget.style.borderColor='#e2e8f0'}/>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:'.75rem' }}>
+        <span style={{ fontSize:'.72rem', fontWeight:700, color:'#94a3b8', alignSelf:'center', marginRight:4 }}>APPROACH:</span>
+        {APPROACHES.map(a=>(
+          <button key={a} onClick={()=>setApproach(a)} className="chip" style={{
+            background: approach===a ? '#1e3a8a' : '#f1f5f9', color: approach===a ? '#fff' : '#475569',
+            cursor:'pointer', border:'none', fontFamily:'inherit',
+          }}>{a}</button>
+        ))}
+      </div>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:'1.5rem' }}>
+        <span style={{ fontSize:'.72rem', fontWeight:700, color:'#94a3b8', alignSelf:'center', marginRight:4 }}>FOCUS:</span>
+        {FOCUS_TAGS.map(t=>(
+          <button key={t} onClick={()=>setFocus(t)} className="chip" style={{
+            background: focus===t ? '#1e3a8a' : '#f1f5f9', color: focus===t ? '#fff' : '#475569',
+            cursor:'pointer', border:'none', fontFamily:'inherit',
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* Results count */}
+      <div style={{ fontSize:'.78rem', color:'#94a3b8', fontWeight:600, marginBottom:'.75rem' }}>
+        {filtered.length} paper{filtered.length!==1?'s':''} found
+      </div>
+
+      {/* Paper list */}
+      <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:'2.5rem', maxHeight:420, overflowY:'auto', paddingRight:4 }}>
+        {filtered.map(p=>(
+          <div key={p.id} className="card-lift" style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:10, padding:'1rem 1.2rem' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+              <div style={{ flex:1 }}>
+                <h4 style={{ fontSize:'.85rem', fontWeight:700, lineHeight:1.4, marginBottom:4, color:'#0f172a' }}>{p.title}</h4>
+                <div style={{ fontSize:'.75rem', color:'#64748b', marginBottom:6 }}>{p.authors} · {p.year}</div>
+                <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                  <span className="chip" style={{ background:'#dbeafe', color:'#1d4ed8' }}>{p.approach}</span>
+                  {p.tags.map(t=><span key={t} className="chip" style={{ background:'#f1f5f9', color:'#475569' }}>{t}</span>)}
+                </div>
+              </div>
+              <div style={{ textAlign:'center', flexShrink:0 }}>
+                <div style={{ fontSize:'.95rem', fontWeight:800, color:'#0f172a' }}>{p.citations}</div>
+                <div style={{ fontSize:'.6rem', color:'#94a3b8', fontWeight:600 }}>CITES</div>
+              </div>
+            </div>
           </div>
-          <input type="range" min={min} max={max} value={val} onChange={e => set(+e.target.value)} />
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {/* Score bar */}
-      <div style={{ margin: '1.25rem 0 .5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-          <span style={{ fontSize: '.75rem', color: '#6b7280', fontWeight: 600 }}>Credit Score</span>
-          <span style={{ fontSize: '.75rem', color: approved ? '#059669' : '#dc2626', fontWeight: 700 }}>{Math.round(score)}/100</span>
+      {/* ── Idea Board ── */}
+      <div style={{ borderTop:'1px solid #e2e8f0', paddingTop:'2rem' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+          <div>
+            <h3 style={{ fontSize:'1.1rem', fontWeight:800, letterSpacing:'-.02em' }}>Idea Board</h3>
+            <p style={{ fontSize:'.78rem', color:'#64748b' }}>Propose metrics, datasets, or open problems.</p>
+          </div>
+          <button style={{ padding:'7px 14px', background:'#dbeafe', color:'#1d4ed8', borderRadius:8, fontWeight:700, fontSize:'.78rem', border:'none', cursor:'pointer', fontFamily:'inherit' }}>+ New Idea</button>
         </div>
-        <div style={{ height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: approved ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)', transition: 'width .4s ease, background .4s ease' }} />
+
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {IDEAS.map(idea=>(
+            <div key={idea.id} className="idea-card" style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#fff', border:'1px solid #e2e8f0', borderRadius:9 }}>
+              <button onClick={()=>toggleVote(idea.id)} className={`upvote-btn ${votes[idea.id]?'voted':''}`}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1, padding:'6px 8px', background: votes[idea.id] ? '#dbeafe' : '#f8fafc', border:'1px solid #e2e8f0', borderRadius:7, cursor:'pointer', minWidth:44 }}>
+                <span style={{ fontSize:'.7rem', fontWeight:800 }}>▲</span>
+                <span style={{ fontSize:'.78rem', fontWeight:800, color: votes[idea.id] ? '#2563eb' : '#0f172a' }}>{idea.votes + (votes[idea.id]?1:0)}</span>
+              </button>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:'.82rem', fontWeight:600, color:'#0f172a', lineHeight:1.4, marginBottom:3 }}>{idea.title}</div>
+                <div style={{ display:'flex', gap:5 }}>
+                  <span className="chip" style={{ background:'#f1f5f9', color:'#475569' }}>{idea.category}</span>
+                  <span className="chip" style={{
+                    background: idea.status==='open' ? '#dcfce7' : idea.status==='in-progress' ? '#fef3c7' : '#e0e7ff',
+                    color: idea.status==='open' ? '#166534' : idea.status==='in-progress' ? '#92400e' : '#3730a3',
+                  }}>{idea.status}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Decision */}
-      <div style={{
-        padding: '1rem 1.2rem', borderRadius: 9,
-        background: approved ? 'rgba(16,185,129,.08)' : 'rgba(239,68,68,.08)',
-        border: `1px solid ${approved ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)'}`,
-        transition: 'all .3s',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: approved ? 0 : 8 }}>
-          <div style={{ width: 9, height: 9, borderRadius: '50%', background: approved ? '#10b981' : '#ef4444', flexShrink: 0, transition: 'background .3s' }} />
-          <span style={{ fontWeight: 700, fontSize: '.88rem', color: approved ? '#065f46' : '#7f1d1d' }}>
-            {approved ? 'Loan Approved ✓' : 'Loan Denied ✗'}
-          </span>
-        </div>
-        {!approved && (
-          <p style={{ fontSize: '.75rem', color: '#6b7280', lineHeight: 1.6 }}>
-            <strong style={{ color: '#374151' }}>Recourse:</strong> Increase income to ${recourseIncome}k  <em>or</em> education to {recourseEdu} years to reverse this decision.
-          </p>
-        )}
+      {/* CTA */}
+      <div style={{ marginTop:'2rem', display:'flex', gap:10 }}>
+        <a href="https://github.com/charmlab" target="_blank" rel="noopener" style={{
+          flex:1, padding:'12px', background:'#0f172a', color:'#fff', borderRadius:9, fontWeight:700, fontSize:'.88rem', textDecoration:'none', textAlign:'center',
+          transition:'background .2s',
+        }} onMouseEnter={e=>e.currentTarget.style.background='#1e3a8a'} onMouseLeave={e=>e.currentTarget.style.background='#0f172a'}>
+          Submit a Paper
+        </a>
+        <a href="https://github.com/charmlab" target="_blank" rel="noopener" style={{
+          flex:1, padding:'12px', background:'#fff', color:'#0f172a', borderRadius:9, fontWeight:700, fontSize:'.88rem', textDecoration:'none', textAlign:'center',
+          border:'1.5px solid #e2e8f0', transition:'all .2s',
+        }}>
+          Join the Discussion
+        </a>
       </div>
     </div>
   );
 }
 
-function WhatIsRecourse() {
+/* ═══════════════════════════════════════
+   TRACK 2: BUILD
+═══════════════════════════════════════ */
+function BuildTrack() {
+  const [modelFilter, setModelFilter] = useState('All');
+  const [dataFilter, setDataFilter]   = useState('All');
+  const [selModel, setSelModel]       = useState('Tree-Based');
+  const [selDataset, setSelDataset]   = useState('german-credit');
+
+  const filteredMethods = useMemo(() => {
+    return METHODS_DATA.filter(m => {
+      const matchModel = modelFilter==='All' || m.model===modelFilter || m.model==='Any';
+      const matchData  = dataFilter==='All'  || m.data===dataFilter;
+      return matchModel && matchData;
+    });
+  }, [modelFilter, dataFilter]);
+
+  const codeSnippet = useMemo(() => {
+    const methods = filteredMethods.slice(0,3);
+    const pkgs = [...new Set(methods.map(m=>m.pkg))];
+    const methodNames = methods.map(m=>`'${m.name}'`).join(', ');
+    return {
+      install: pkgs.map(p=>`pip install ${p}`).join('\n'),
+      code: `from carla import Benchmark, MLModel
+from carla.evaluation import auto_evaluate
+
+# Load model & data
+model = MLModel.load("${selModel.toLowerCase().replace(/[^a-z]/g,'_')}")
+data  = Benchmark("${selDataset}")
+
+# Evaluate top methods
+results = auto_evaluate(
+    model, data,
+    methods=[${methodNames}]
+)
+print(results.summary())`,
+    };
+  }, [filteredMethods, selModel, selDataset]);
+
+  const chartData = filteredMethods.map(m=>({
+    ...m, z: m.sparsity * 80,
+  }));
+
   return (
-    <section id="recourse" style={{ padding: '7rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: '4.5rem', alignItems: 'start' }}>
-
-        <div>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Core Concept</div>
-          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.18, marginBottom: '1.25rem' }}>
-            What is Algorithmic Recourse?
-          </h2>
-          <p style={{ fontSize: '1rem', color: '#4b5563', lineHeight: 1.78, marginBottom: '1.75rem' }}>
-            When an AI system makes a consequential decision—denying a loan, rejecting an application, assigning a risk score—recourse asks:
-            <span style={{ color: '#1d4ed8', fontWeight: 600 }}> what minimal change would flip the outcome?</span>
-          </p>
-
-          <div style={{ marginBottom: '1.75rem' }}>
-            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.6rem' }}>Formal Optimization Problem</div>
-            <div className="math-display">
-              <KatexSpan tex="\min_{\delta} \; c(\delta) \quad \text{s.t.} \quad f(\mathbf{x} + \delta) = y^*" />
-            </div>
-            <p style={{ fontSize: '.78rem', color: '#6b7280', marginTop: '.6rem', lineHeight: 1.6 }}>
-              Find the minimal-cost perturbation <KatexSpan tex="\delta" /> to input <KatexSpan tex="\mathbf{x}" /> such that model <KatexSpan tex="f" /> predicts the desired outcome <KatexSpan tex="y^*" />.
-            </p>
-          </div>
-
-          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 11 }}>
-            {[
-              { icon: '⟶', text: 'Actionable changes—not post-hoc explanations alone' },
-              { icon: '◎', text: 'Personalized to the individual and their context' },
-              { icon: '⧖', text: 'Constrained by feasibility, causality, and cost' },
-            ].map(({ icon, text }) => (
-              <li key={text} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, background: '#eff6ff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.9rem', color: '#2563eb', flexShrink: 0, fontWeight: 700 }}>{icon}</div>
-                <span style={{ fontSize: '.88rem', color: '#374151', fontWeight: 500, lineHeight: 1.5 }}>{text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <RecourseSlider />
+    <div style={{ padding:'2rem 1.5rem' }}>
+      <div style={{ marginBottom:'2rem' }}>
+        <span className="track-badge" style={{ background:'#ede9fe', color:'#6d28d9', marginBottom:12, display:'inline-block' }}>Track 2 · Practitioners</span>
+        <h2 style={{ fontSize:'1.6rem', fontWeight:800, letterSpacing:'-.03em', marginBottom:'.5rem' }}>Build with Recourse</h2>
+        <p style={{ fontSize:'.88rem', color:'#64748b', lineHeight:1.65 }}>Interactive benchmarks, code, and evaluation tools.</p>
       </div>
-    </section>
-  );
-}
 
-/* ═══════════════════════════════════════════════
-   THREE PILLARS
-═══════════════════════════════════════════════ */
-function Pillars() {
-  const pillars = [
-    {
-      num: '01', title: 'Understand', color: '#2563eb', bg: '#eff6ff',
-      desc: 'Formalizing recourse through optimization, causality, and decision theory. Grounding recommendations in rigorous mathematical foundations.',
-      tags: ['Optimization', 'Causal', 'Theory'],
-      svg: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="9" stroke="#2563eb" strokeWidth="1.6"/>
-          <path d="M9 12h6M12 9v6" stroke="#2563eb" strokeWidth="1.6" strokeLinecap="round"/>
-        </svg>
-      ),
-    },
-    {
-      num: '02', title: 'Challenge', color: '#7c3aed', bg: '#f5f3ff',
-      desc: 'Generating recourse under real-world constraints: feasibility, fairness, and robustness to distribution shift and adversarial conditions.',
-      tags: ['Robustness', 'Fairness', 'Constraints'],
-      svg: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M5 12h14M12 5l7 7-7 7" stroke="#7c3aed" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-    },
-    {
-      num: '03', title: 'Improve', color: '#059669', bg: '#ecfdf5',
-      desc: 'Feedback loops, human-AI interaction, and adaptive systems that co-evolve recourse strategies over sequential decision processes.',
-      tags: ['Adaptive', 'Human-AI', 'Sequential'],
-      svg: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M20 12a8 8 0 01-8 8A8 8 0 014 12a8 8 0 018-8" stroke="#059669" strokeWidth="1.6" strokeLinecap="round"/>
-          <path d="M20 8v4h-4" stroke="#059669" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <section style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Research Framework</div>
-          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Three Pillars</h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1.5rem' }}>
-          {pillars.map(p => (
-            <div key={p.title} className="card-hover" style={{
-              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 13, padding: '2rem',
-              borderTop: `3px solid ${p.color}`,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                <div style={{ width: 50, height: 50, background: p.bg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {p.svg}
-                </div>
-                <span style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em' }}>{p.num}</span>
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-.02em', marginBottom: '.7rem', color: '#111827' }}>{p.title}</h3>
-              <p style={{ fontSize: '.875rem', color: '#6b7280', lineHeight: 1.68, marginBottom: '1.25rem' }}>{p.desc}</p>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {p.tags.map(t => (
-                  <span key={t} className="tag-chip" style={{ background: p.bg, color: p.color }}>{t}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   INTERACTIVE RESEARCH
-═══════════════════════════════════════════════ */
-function InteractiveResearch() {
-  const papers = [
-    {
-      num: '01', title: 'A Unified Framework for Recourse',
-      desc: 'Explore optimization-based and causal recourse side-by-side through interactive visualizations and adjustable model parameters.',
-      tags: ['Optimization', 'Causal', 'Interactive'], cta: 'Open', available: true, color: '#2563eb',
-    },
-    {
-      num: '02', title: 'Causal Explainability',
-      desc: 'See how recourse recommendations change under different structural causal assumptions, with live interventional semantics.',
-      tags: ['Causality', 'SCM', 'Counterfactual'], cta: 'Explore', available: true, color: '#7c3aed',
-    },
-    {
-      num: '03', title: 'Human-AI Recourse Systems',
-      desc: 'Multi-step and multi-agent decision dynamics where humans and AI systems co-navigate recourse trajectories over time.',
-      tags: ['Multi-Agent', 'Sequential', 'Human-AI'], cta: 'Coming Soon', available: false, color: '#6b7280',
-    },
-  ];
-
-  return (
-    <section id="research" style={{ padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+      {/* ── Applicability Matrix ── */}
+      <div style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, padding:'1.25rem', marginBottom:'1.5rem' }}>
+        <h3 style={{ fontSize:'.95rem', fontWeight:800, marginBottom:'.75rem', letterSpacing:'-.02em' }}>Applicability Matrix</h3>
+        <div style={{ display:'flex', gap:8, marginBottom:'1rem', flexWrap:'wrap' }}>
           <div>
-            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Publications</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Interactive Research</h2>
+            <div style={{ fontSize:'.65rem', fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:4 }}>Model</div>
+            <select value={modelFilter} onChange={e=>setModelFilter(e.target.value)}
+              style={{ padding:'6px 10px', background:'#f1f5f9', border:'1.5px solid #e2e8f0', borderRadius:7, fontSize:'.8rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              {MODEL_TYPES.map(m=><option key={m} value={m}>{m}</option>)}
+            </select>
           </div>
-          <p style={{ fontSize: '.88rem', color: '#6b7280', maxWidth: 360, lineHeight: 1.7 }}>
-            Research artifacts with embedded interactivity. Explore models, assumptions, and results directly in the browser.
-          </p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: '1.5rem' }}>
-          {papers.map(p => (
-            <div key={p.title} className="card-hover" style={{
-              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 13, padding: '2rem',
-              display: 'flex', flexDirection: 'column', opacity: p.available ? 1 : .72,
-            }}>
-              <div style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em', marginBottom: '1rem' }}>PAPER {p.num}</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-.02em', lineHeight: 1.35, marginBottom: '.75rem' }}>{p.title}</h3>
-              <p style={{ fontSize: '.85rem', color: '#6b7280', lineHeight: 1.68, flex: 1, marginBottom: '1.5rem' }}>{p.desc}</p>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.4rem' }}>
-                {p.tags.map(t => <span key={t} className="tag-chip" style={{ background: '#f3f4f6', color: '#6b7280' }}>{t}</span>)}
-              </div>
-              <button
-                style={{
-                  padding: '10px 22px', borderRadius: 7, border: `1.5px solid ${p.available ? p.color : '#e5e7eb'}`,
-                  background: 'transparent', color: p.available ? p.color : '#9ca3af',
-                  fontWeight: 600, fontSize: '.875rem', cursor: p.available ? 'pointer' : 'default',
-                  transition: 'background .2s, color .2s', alignSelf: 'flex-start',
-                }}
-                onMouseEnter={e => { if (p.available) { e.currentTarget.style.background = p.color; e.currentTarget.style.color = '#fff'; } }}
-                onMouseLeave={e => { if (p.available) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = p.color; } }}>
-                {p.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   METHODS LIBRARY
-═══════════════════════════════════════════════ */
-function Methods() {
-  const [filter, setFilter] = useState('All');
-  const methods = [
-    { name: 'Wachter et al.', year: '2017', desc: 'Counterfactual explanations without opening the black box.', tags: ['Optimization'] },
-    { name: 'DiCE', year: '2020', desc: 'Diverse counterfactual explanations via gradient-based search.', tags: ['Optimization', 'Diverse'] },
-    { name: 'Causal Recourse', year: '2021', desc: 'Recourse via structural causal models with interventional semantics.', tags: ['Causal'] },
-    { name: 'ROAR', year: '2021', desc: 'Robust algorithmic recourse under model multiplicity.', tags: ['Robust', 'Optimization'] },
-    { name: 'FACE', year: '2019', desc: 'Feasible and actionable counterfactual explanations.', tags: ['Optimization', 'Feasibility'] },
-    { name: 'GeCo', year: '2021', desc: 'Quality counterfactuals respecting user constraints.', tags: ['Optimization', 'Feasibility'] },
-    { name: 'MCCE', year: '2022', desc: 'Causal counterfactuals via Monte Carlo sampling.', tags: ['Causal', 'Sampling'] },
-    { name: 'ActionableRecourse', year: '2019', desc: 'Feasibility-aware recourse with actionability constraints.', tags: ['Feasibility', 'Optimization'] },
-  ];
-
-  const tagPalette = {
-    Optimization: { bg:'#dbeafe', color:'#1d4ed8' },
-    Causal:       { bg:'#ede9fe', color:'#6d28d9' },
-    Robust:       { bg:'#dcfce7', color:'#15803d' },
-    Diverse:      { bg:'#fef9c3', color:'#a16207' },
-    Feasibility:  { bg:'#fee2e2', color:'#b91c1c' },
-    Sampling:     { bg:'#ffedd5', color:'#c2410c' },
-  };
-
-  const filterOptions = ['All', 'Optimization', 'Causal', 'Robust', 'Feasibility'];
-  const visible = filter === 'All' ? methods : methods.filter(m => m.tags.includes(filter));
-
-  return (
-    <section id="methods" style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '3rem' }}>
           <div>
-            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Reference</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Methods</h2>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {filterOptions.map(t => (
-              <button key={t} onClick={() => setFilter(t)} style={{
-                padding: '6px 16px', borderRadius: 99, border: '1.5px solid',
-                borderColor: filter === t ? '#2563eb' : '#e5e7eb',
-                background: filter === t ? '#2563eb' : '#fff',
-                color: filter === t ? '#fff' : '#6b7280',
-                fontWeight: 600, fontSize: '.78rem', cursor: 'pointer', transition: 'all .18s',
-                fontFamily: 'inherit',
-              }}>{t}</button>
-            ))}
+            <div style={{ fontSize:'.65rem', fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:4 }}>Data</div>
+            <select value={dataFilter} onChange={e=>setDataFilter(e.target.value)}
+              style={{ padding:'6px 10px', background:'#f1f5f9', border:'1.5px solid #e2e8f0', borderRadius:7, fontSize:'.8rem', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              {DATA_TYPES.map(d=><option key={d} value={d}>{d}</option>)}
+            </select>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: '1rem' }}>
-          {visible.map(m => (
-            <div key={m.name} className="card-hover" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '1.4rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '.5rem' }}>
-                <h4 style={{ fontSize: '.9rem', fontWeight: 700, letterSpacing: '-.01em', lineHeight: 1.35, flex: 1 }}>{m.name}</h4>
-                <span style={{ fontSize: '.7rem', color: '#9ca3af', fontWeight: 500, flexShrink: 0, marginLeft: 8, fontFamily: '"JetBrains Mono", monospace' }}>{m.year}</span>
+        <div style={{ fontSize:'.68rem', color:'#94a3b8', marginBottom:8 }}>
+          Runtime (s) vs Validity (%) · Bubble size = Sparsity · {filteredMethods.length} methods shown
+        </div>
+        <div style={{ height:240 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top:10, right:10, bottom:20, left:20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
+              <XAxis type="number" dataKey="runtime" name="Runtime" unit="s" tick={{ fontSize:11, fill:'#64748b' }} label={{ value:'Runtime (s)', position:'insideBottom', offset:-10, fontSize:11, fill:'#94a3b8' }}/>
+              <YAxis type="number" dataKey="validity" name="Validity" unit="%" domain={[70,100]} tick={{ fontSize:11, fill:'#64748b' }} label={{ value:'Validity %', angle:-90, position:'insideLeft', fontSize:11, fill:'#94a3b8' }}/>
+              <ZAxis type="number" dataKey="z" range={[60,300]}/>
+              <RTooltip cursor={{ strokeDasharray:'3 3' }}
+                content={({active,payload})=>{
+                  if(!active||!payload?.length) return null;
+                  const d=payload[0].payload;
+                  return (
+                    <div style={{ background:'#0f172a', color:'#fff', padding:'10px 14px', borderRadius:9, fontSize:'.78rem', lineHeight:1.6, boxShadow:'0 8px 24px rgba(0,0,0,.2)' }}>
+                      <div style={{ fontWeight:800, marginBottom:4 }}>{d.name}</div>
+                      <div>Validity: {d.validity}%</div>
+                      <div>Runtime: {d.runtime}s</div>
+                      <div>Sparsity: {d.sparsity}</div>
+                      <div style={{ color:'#94a3b8', marginTop:3 }}>pkg: {d.pkg}</div>
+                    </div>
+                  );
+                }}/>
+              <Scatter data={chartData}>
+                {chartData.map((entry,i)=><Cell key={i} fill={entry.color}/>)}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Pip Install Wizard ── */}
+      <div style={{ background:'#0f172a', borderRadius:12, padding:'1.25rem', marginBottom:'1.5rem', overflow:'hidden' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1rem' }}>
+          <h3 style={{ fontSize:'.95rem', fontWeight:800, color:'#fff', letterSpacing:'-.02em' }}>Quick Start</h3>
+          <div style={{ display:'flex', gap:6 }}>
+            {['#ef4444','#f59e0b','#22c55e'].map(c=><div key={c} style={{ width:10, height:10, borderRadius:'50%', background:c }}/>)}
+          </div>
+        </div>
+        <div style={{ display:'flex', gap:8, marginBottom:'1rem' }}>
+          <select value={selModel} onChange={e=>setSelModel(e.target.value)}
+            style={{ padding:'6px 10px', background:'#1e293b', color:'#e2e8f0', border:'1px solid #334155', borderRadius:6, fontSize:'.78rem', fontWeight:600, fontFamily:'inherit' }}>
+            {['Tree-Based','Neural Net','Linear','SVM'].map(m=><option key={m}>{m}</option>)}
+          </select>
+          <select value={selDataset} onChange={e=>setSelDataset(e.target.value)}
+            style={{ padding:'6px 10px', background:'#1e293b', color:'#e2e8f0', border:'1px solid #334155', borderRadius:6, fontSize:'.78rem', fontWeight:600, fontFamily:'inherit' }}>
+            {['german-credit','adult-income','compas','give-me-credit'].map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+        <pre style={{ fontFamily:'"JetBrains Mono",monospace', fontSize:'.78rem', lineHeight:1.8, color:'#e2e8f0', overflowX:'auto', whiteSpace:'pre-wrap' }}>
+          <span style={{ color:'#6b7280' }}># Install packages</span>{'\n'}
+          <span style={{ color:'#4ade80' }}>$</span> {codeSnippet.install}{'\n\n'}
+          <span style={{ color:'#6b7280' }}># Evaluate recourse methods</span>{'\n'}
+          <span style={{ color:'#93c5fd' }}>{codeSnippet.code}</span>
+        </pre>
+      </div>
+
+      {/* ── Metrics Glossary ── */}
+      <div style={{ borderTop:'1px solid #e2e8f0', paddingTop:'1.5rem' }}>
+        <h3 style={{ fontSize:'1rem', fontWeight:800, letterSpacing:'-.02em', marginBottom:'1rem' }}>Metrics Glossary</h3>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {METRICS_GLOSSARY.map(m=>(
+            <div key={m.term} style={{ display:'flex', gap:12, padding:'10px 12px', background:'#f8fafc', borderRadius:9, border:'1px solid #f1f5f9' }}>
+              <div style={{ minWidth:90 }}>
+                <div style={{ fontSize:'.85rem', fontWeight:800, color:'#0f172a' }}>{m.term}</div>
+                <div style={{ fontSize:'.65rem', color:'#94a3b8', fontWeight:600 }}>aka: {m.aka}</div>
               </div>
-              <p style={{ fontSize: '.8rem', color: '#6b7280', lineHeight: 1.58, marginBottom: '1rem' }}>{m.desc}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                  {m.tags.map(t => (
-                    <span key={t} className="tag-chip" style={{ background: tagPalette[t]?.bg || '#f3f4f6', color: tagPalette[t]?.color || '#374151' }}>{t}</span>
-                  ))}
-                </div>
-                <button style={{ fontSize: '.75rem', fontWeight: 700, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', fontFamily: 'inherit' }}>
-                  Details →
-                </button>
-              </div>
+              <div style={{ fontSize:'.8rem', color:'#475569', lineHeight:1.55, flex:1 }}>{m.def}</div>
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-/* ═══════════════════════════════════════════════
-   BENCHMARK
-═══════════════════════════════════════════════ */
-function Benchmark() {
-  const [animated, setAnimated] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setAnimated(true); }, { threshold: .3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const metrics = [
-    { name: 'Validity',     pct: 92, color: '#60a5fa', formula: 'f(\\mathbf{x}+\\delta) = y^*',                               desc: 'Recourse achieves target outcome under the original model.' },
-    { name: 'Cost',         pct: 81, color: '#a78bfa', formula: 'c(\\delta) = \\|\\delta\\|_1',                                desc: 'L₁ distance in feature space, normalized by actionability constraints.' },
-    { name: 'Plausibility', pct: 68, color: '#34d399', formula: '\\delta \\in \\mathcal{F}(\\mathbf{x})',                       desc: 'Recourse lies within the data manifold and satisfies domain constraints.' },
-    { name: 'Robustness',   pct: 54, color: '#fbbf24', formula: '\\mathbb{P}(f(\\mathbf{x}+\\delta+\\epsilon)=y^*) \\geq \\alpha', desc: 'Recommendation remains valid under small input and model perturbations.' },
-  ];
-
-  return (
-    <section id="benchmark" ref={ref} style={{ background: '#080f27', padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>RecourseBench</div>
-          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', color: '#fff', marginBottom: '.75rem' }}>
-            Benchmarking Recourse
-          </h2>
-          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,.5)', maxWidth: 500, margin: '0 auto', lineHeight: 1.72 }}>
-            Evaluate methods across standardized metrics on curated datasets. Reproducible. Open. Community-driven.
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
-          {metrics.map(m => (
-            <div key={m.name} style={{
-              background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.09)',
-              borderRadius: 11, padding: '1.75rem',
-              transition: 'background .2s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.09)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.055)'}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.75rem' }}>
-                <h4 style={{ color: '#fff', fontWeight: 700, fontSize: '.98rem' }}>{m.name}</h4>
-                <span style={{ color: m.color, fontWeight: 800, fontSize: '1.15rem', fontFamily: '"JetBrains Mono", monospace' }}>{m.pct}%</span>
-              </div>
-              <div style={{ height: 5, background: 'rgba(255,255,255,.1)', borderRadius: 3, marginBottom: '1rem', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 3, background: m.color,
-                  width: animated ? `${m.pct}%` : '0%',
-                  transition: 'width 1.1s cubic-bezier(.34,1.56,.64,1)',
-                }} />
-              </div>
-              <div style={{ background: 'rgba(255,255,255,.04)', borderRadius: 7, padding: '.55rem .75rem', marginBottom: '.75rem' }}>
-                <KatexSpan tex={m.formula} style={{ color: m.color, fontSize: '.8rem' }} />
-              </div>
-              <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.4)', lineHeight: 1.58 }}>{m.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button style={{ padding: '12px 28px', background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.9rem', border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(37,99,235,.4)', transition: 'background .2s', fontFamily: 'inherit' }}
-            onMouseEnter={e => e.currentTarget.style.background='#1d4ed8'}
-            onMouseLeave={e => e.currentTarget.style.background='#2563eb'}>
-            View Leaderboard
-          </button>
-          <button style={{ padding: '12px 28px', background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', transition: 'background .2s', fontFamily: 'inherit' }}
-            onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.07)'}
-            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-            Submit Method
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   SANDBOX / DEMO
-═══════════════════════════════════════════════ */
-function Sandbox() {
-  const [dataset, setDataset] = useState('Credit Scoring');
-  const [model,   setModel]   = useState('Logistic Regression');
-  const [generated, setGenerated] = useState(false);
+/* ═══════════════════════════════════════
+   TRACK 3: DEPLOY
+═══════════════════════════════════════ */
+function DeployTrack() {
+  const [recourseGenerated, setRecourseGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleGenerate = () => {
+  const generateRecourse = () => {
     setLoading(true);
-    setGenerated(false);
-    setTimeout(() => { setLoading(false); setGenerated(true); }, 900);
+    setRecourseGenerated(false);
+    setTimeout(() => { setLoading(false); setRecourseGenerated(true); }, 1200);
   };
-
-  const recourseMessages = {
-    'Credit Scoring': { 'Logistic Regression': 'Increase income by $14k and reduce debt by $2k.' },
-    'COMPAS':         { 'Logistic Regression': 'Decrease prior offenses by 1, increase program participation.' },
-    'Adult Income':   { 'Logistic Regression': 'Increase education to Bachelor\'s level (+2 years).' },
-  };
-  const msg = (recourseMessages[dataset] || {})[model] || 'Adjust features to change the model outcome.';
 
   return (
-    <section id="demo" style={{ padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(360px,1fr))', gap: '4rem', alignItems: 'center' }}>
+    <div style={{ padding:'2rem 1.5rem' }}>
+      <div style={{ marginBottom:'2rem' }}>
+        <span className="track-badge" style={{ background:'#dcfce7', color:'#166534', marginBottom:12, display:'inline-block' }}>Track 3 · Executives</span>
+        <h2 style={{ fontSize:'1.6rem', fontWeight:800, letterSpacing:'-.03em', marginBottom:'.5rem' }}>Deploy in Your Organization</h2>
+        <p style={{ fontSize:'.88rem', color:'#64748b', lineHeight:1.65 }}>From algorithmic metrics to business ROI, compliance, and retention.</p>
+      </div>
 
-        <div>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Interactive Tool</div>
-          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.2, marginBottom: '1.25rem' }}>Try Recourse</h2>
-          <p style={{ fontSize: '1rem', color: '#6b7280', lineHeight: 1.76, marginBottom: '2rem' }}>
-            Experiment with different models, datasets, and feature configurations. Generate recourse recommendations in real time and visualize the decision boundary.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: '2.25rem' }}>
-            {[
-              { icon: '↑', text: 'Upload or select a dataset' },
-              { icon: '⊞', text: 'Adjust individual features with sliders' },
-              { icon: '◉', text: 'Observe decision boundary changes' },
-              { icon: '→', text: 'Visualize the recourse path in feature space' },
-            ].map(({ icon, text }) => (
-              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-                <div style={{ width: 36, height: 36, background: '#eff6ff', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 800, fontSize: '.88rem', flexShrink: 0 }}>{icon}</div>
-                <span style={{ fontSize: '.88rem', color: '#374151', fontWeight: 500 }}>{text}</span>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handleGenerate}
-            style={{ padding: '13px 30px', background: '#111827', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.95rem', border: 'none', cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit' }}
-            onMouseEnter={e => { e.currentTarget.style.background='#2563eb'; e.currentTarget.style.transform='translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background='#111827'; e.currentTarget.style.transform='translateY(0)'; }}>
-            Launch Demo →
-          </button>
-        </div>
-
-        {/* Terminal mockup */}
-        <div style={{ background: '#0d1117', borderRadius: 14, overflow: 'hidden', border: '1px solid #21262d', boxShadow: '0 20px 60px rgba(0,0,0,.25)' }}>
-          {/* Titlebar */}
-          <div style={{ padding: '12px 16px', background: '#161b22', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: 7 }}>
-            {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
-            <div style={{ flex: 1, background: '#0d1117', borderRadius: 5, height: 22, marginLeft: 10, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>
-              <span style={{ fontSize: '.63rem', color: '#6e7681', fontFamily: '"JetBrains Mono", monospace' }}>recoursehub.ai/demo</span>
-            </div>
-          </div>
-
-          <div style={{ padding: '1.4rem' }}>
-            {/* Selectors */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-              {[
-                { label: 'Dataset', val: dataset, set: setDataset, opts: ['Credit Scoring','COMPAS','Adult Income'] },
-                { label: 'Model',   val: model,   set: setModel,   opts: ['Logistic Regression','Random Forest','Neural Net'] },
-              ].map(({ label, val, set, opts }) => (
-                <div key={label} style={{ background: '#161b22', borderRadius: 8, padding: '.7rem .9rem', border: '1px solid #21262d' }}>
-                  <div style={{ fontSize: '.6rem', color: '#6e7681', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 3, fontWeight: 700 }}>{label}</div>
-                  <select value={val} onChange={e => set(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: '#e6edf3', fontSize: '.78rem', fontWeight: 600, cursor: 'pointer', width: '100%', outline: 'none' }}>
-                    {opts.map(o => <option key={o} value={o} style={{ background: '#161b22' }}>{o}</option>)}
-                  </select>
+      {/* ── Business Value Translation ── */}
+      <div style={{ marginBottom:'2rem' }}>
+        <h3 style={{ fontSize:'1rem', fontWeight:800, letterSpacing:'-.02em', marginBottom:'1rem' }}>Why It Matters to Your Business</h3>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {BUSINESS_MAP.map(b=>(
+            <div key={b.metric} className="card-lift" style={{ display:'flex', alignItems:'stretch', background:'#fff', border:'1px solid #e2e8f0', borderRadius:11, overflow:'hidden' }}>
+              <div style={{ width:4, background:b.color, flexShrink:0 }}/>
+              <div style={{ flex:1, padding:'1rem 1.2rem' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                  <div style={{ width:36, height:36, borderRadius:9, background:b.colorBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', flexShrink:0 }}>{b.icon}</div>
+                  <div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontSize:'.82rem', fontWeight:800, color:'#0f172a' }}>{b.metric}</span>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke={b.color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <span style={{ fontSize:'.82rem', fontWeight:800, color:b.color }}>{b.business}</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* SVG vis */}
-            <div style={{ background: '#161b22', borderRadius: 9, padding: '.75rem', marginBottom: 12, border: '1px solid #21262d' }}>
-              <svg width="100%" height="130" viewBox="0 0 300 130">
-                {/* Boundary */}
-                <path d="M50 20 Q150 68 250 30" stroke="#2563eb" strokeWidth="1.4" fill="none" strokeDasharray="5 3" opacity=".7"/>
-                {/* Denied dots */}
-                {[[40,75],[60,88],[45,62],[75,80],[55,95],[35,85]].map(([x,y],i) =>
-                  <circle key={i} cx={x} cy={y} r="3.5" fill="#ef4444" opacity=".65"/>
-                )}
-                {/* Approved dots */}
-                {[[190,38],[210,50],[175,28],[230,42],[200,58],[218,34]].map(([x,y],i) =>
-                  <circle key={i} cx={x} cy={y} r="3.5" fill="#10b981" opacity=".65"/>
-                )}
-                {/* Individual */}
-                <circle cx="115" cy="75" r="6" fill="#f59e0b"/>
-                <text x="124" y="79" fill="#f59e0b" fontSize="10" fontWeight="700" fontFamily="Georgia,serif" fontStyle="italic">x</text>
-                {/* Recourse arrow */}
-                {generated && (
-                  <>
-                    <path d="M120 72 L178 50" stroke="#60a5fa" strokeWidth="1.6" strokeDasharray="4 2" markerEnd="url(#arrowHead)"/>
-                    <circle cx="182" cy="48" r="6" fill="#60a5fa" opacity=".9"/>
-                    <text x="190" y="52" fill="#60a5fa" fontSize="9" fontWeight="700" fontFamily="Georgia,serif" fontStyle="italic">x+δ</text>
-                  </>
-                )}
-                <defs>
-                  <marker id="arrowHead" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-                    <path d="M0,0 L0,7 L7,3.5 z" fill="#60a5fa"/>
-                  </marker>
-                </defs>
-                <text x="28" y="118" fill="#ef4444" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Denied</text>
-                <text x="198" y="18" fill="#10b981" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Approved</text>
-                <text x="95" y="118" fill="#f59e0b" fontSize="8" opacity=".6" fontFamily="Inter,sans-serif">Individual</text>
-              </svg>
-            </div>
-
-            {/* Status */}
-            <div style={{ borderRadius: 8, padding: '.8rem 1rem', background: loading ? 'rgba(245,158,11,.08)' : generated ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.04)', border: `1px solid ${loading ? 'rgba(245,158,11,.2)' : generated ? 'rgba(37,99,235,.25)' : 'rgba(255,255,255,.08)'}`, transition: 'all .3s' }}>
-              {loading ? (
-                <span style={{ fontSize: '.75rem', color: '#f59e0b', fontFamily: '"JetBrains Mono", monospace' }}>⟳ Computing recourse...</span>
-              ) : generated ? (
-                <span style={{ fontSize: '.75rem', color: '#93c5fd', fontFamily: '"JetBrains Mono", monospace' }}>✓ {msg}</span>
-              ) : (
-                <span style={{ fontSize: '.75rem', color: '#6e7681', fontFamily: '"JetBrains Mono", monospace' }}>Select parameters and launch demo.</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══════════════════════════════════════════════
-   OPEN PROBLEMS
-═══════════════════════════════════════════════ */
-function OpenProblems() {
-  const problems = [
-    { num:'01', title:'Multi-Agent Recourse',      status:'Active', tags:['Multi-Agent','Game Theory'],    desc:'How do multiple stakeholders interact when recourse actions conflict? Equilibrium concepts and strategic behavior under adversarial dynamics.' },
-    { num:'02', title:'Robust Recourse',           status:'Active', tags:['Robustness','Certification'], desc:'How stable are recourse recommendations under model shifts or retraining? Certifiable robustness guarantees under distribution change.' },
-    { num:'03', title:'Sequential Recourse',       status:'Open',   tags:['Sequential','Temporal'],       desc:'What happens when decisions unfold over time? Long-horizon recourse in non-stationary environments with adaptive policies.' },
-    { num:'04', title:'Causal Identifiability',    status:'Open',   tags:['Causal','Theory'],             desc:'When can interventional recourse be identified from observational data alone? Partial identification under unknown causal structure.' },
-  ];
-
-  return (
-    <section id="problems" style={{ background: '#f9fafb', padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <div>
-            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Research Agenda</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Open Problems</h2>
-          </div>
-          <p style={{ fontSize: '.88rem', color: '#6b7280', maxWidth: 360, lineHeight: 1.7 }}>Fundamental questions shaping the next generation of recourse research.</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(270px,1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
-          {problems.map(p => (
-            <div key={p.title} className="prob-card" style={{ background: '#fff', borderRadius: '0 11px 11px 0', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.6rem' }}>
-                <span style={{ fontSize: '.68rem', fontWeight: 700, color: '#d1d5db', letterSpacing: '.12em' }}>{p.num}</span>
-                <span className="tag-chip" style={{ background: p.status === 'Active' ? '#dcfce7' : '#fef3c7', color: p.status === 'Active' ? '#166534' : '#b45309' }}>{p.status}</span>
-              </div>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-.02em', marginBottom: '.6rem' }}>{p.title}</h4>
-              <p style={{ fontSize: '.82rem', color: '#6b7280', lineHeight: 1.62, marginBottom: '1rem' }}>{p.desc}</p>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {p.tags.map(t => <span key={t} className="tag-chip" style={{ background: '#f3f4f6', color: '#6b7280' }}>{t}</span>)}
+                <p style={{ fontSize:'.8rem', color:'#64748b', lineHeight:1.6 }}>{b.detail}</p>
               </div>
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button style={{ padding: '12px 28px', background: '#111827', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: '.9rem', border: 'none', cursor: 'pointer', transition: 'background .2s', fontFamily: 'inherit' }}
-            onMouseEnter={e => e.currentTarget.style.background='#2563eb'}
-            onMouseLeave={e => e.currentTarget.style.background='#111827'}>
-            View All Problems
-          </button>
-          <button style={{ padding: '12px 28px', background: 'transparent', color: '#111827', border: '1.5px solid #e5e7eb', borderRadius: 8, fontWeight: 600, fontSize: '.9rem', cursor: 'pointer', transition: 'all .2s', fontFamily: 'inherit' }}
-            onMouseEnter={e => { e.currentTarget.style.background='#111827'; e.currentTarget.style.color='#fff'; e.currentTarget.style.borderColor='#111827'; }}
-            onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='#111827'; e.currentTarget.style.borderColor='#e5e7eb'; }}>
-            Collaborate →
-          </button>
-        </div>
       </div>
-    </section>
-  );
-}
 
-/* ═══════════════════════════════════════════════
-   LEARN
-═══════════════════════════════════════════════ */
-function Learn() {
-  const resources = [
-    { icon: '◯', title: 'What is Recourse?', level: 'Intro', levelBg: '#dcfce7', levelColor: '#166534', desc: 'A concise primer: definitions, motivation, and the distinction between explanation and recourse.' },
-    { icon: '◈', title: 'Causal vs. Non-Causal Recourse', level: 'Intermediate', levelBg: '#dbeafe', levelColor: '#1d4ed8', desc: 'When causal structure matters, identifiability conditions, and the cost of ignoring causality.' },
-    { icon: '◆', title: 'From Papers to Practice', level: 'Advanced', levelBg: '#ede9fe', levelColor: '#6d28d9', desc: 'Bridging theoretical frameworks to production AI systems: integration, monitoring, and auditing.' },
-  ];
-  return (
-    <section id="learn" style={{ padding: '5.5rem 2rem' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '.75rem' }}>Education</div>
-          <h2 style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)', fontWeight: 800, letterSpacing: '-.03em' }}>Learn</h2>
+      {/* ── Bank Manager Demo ── */}
+      <div style={{
+        background:'linear-gradient(145deg,#0f172a,#1e293b)', borderRadius:14, padding:'1.5rem', marginBottom:'2rem',
+        border:'1px solid #334155',
+      }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.25rem' }}>
+          <h3 style={{ fontSize:'1rem', fontWeight:800, color:'#fff', letterSpacing:'-.02em' }}>Loan Decision Dashboard</h3>
+          <span className="chip" style={{ background:'rgba(239,68,68,.15)', color:'#fca5a5' }}>Demo</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1.25rem' }}>
-          {resources.map(r => (
-            <div key={r.title} className="card-hover" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 11, padding: '1.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
-                <span style={{ fontSize: '1.4rem', color: '#2563eb' }}>{r.icon}</span>
-                <span className="tag-chip" style={{ background: r.levelBg, color: r.levelColor }}>{r.level}</span>
+
+        {/* Applicant card */}
+        <div style={{ background:'#1e293b', borderRadius:10, padding:'1.1rem', marginBottom:'1rem', border:'1px solid #334155' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', background:'linear-gradient(135deg,#4f46e5,#7c3aed)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:'.88rem' }}>SC</div>
+              <div>
+                <div style={{ fontWeight:700, color:'#e2e8f0', fontSize:'.88rem' }}>{MOCK_APPLICANT.name}</div>
+                <div style={{ fontSize:'.72rem', color:'#64748b' }}>Age {MOCK_APPLICANT.age} · {MOCK_APPLICANT.education}</div>
               </div>
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-.02em', marginBottom: '.6rem' }}>{r.title}</h4>
-              <p style={{ fontSize: '.82rem', color: '#6b7280', lineHeight: 1.62, marginBottom: '1.25rem' }}>{r.desc}</p>
-              <a href="#" style={{ fontSize: '.82rem', fontWeight: 700, color: '#2563eb', textDecoration: 'none' }}>Read →</a>
             </div>
-          ))}
+            <div style={{ padding:'5px 14px', background:'rgba(239,68,68,.12)', border:'1px solid rgba(239,68,68,.3)', borderRadius:8, color:'#fca5a5', fontWeight:800, fontSize:'.78rem' }}>
+              ✕ REJECTED
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+            {[
+              { l:'Income', v:`$${(MOCK_APPLICANT.income/1000).toFixed(0)}k` },
+              { l:'Credit Score', v:MOCK_APPLICANT.creditScore },
+              { l:'Debt Ratio', v:`${(MOCK_APPLICANT.debtRatio*100).toFixed(0)}%` },
+            ].map(s=>(
+              <div key={s.l} style={{ background:'#0f172a', borderRadius:7, padding:'8px 10px', textAlign:'center' }}>
+                <div style={{ fontSize:'.6rem', color:'#64748b', textTransform:'uppercase', letterSpacing:'.08em', fontWeight:700, marginBottom:2 }}>{s.l}</div>
+                <div style={{ fontSize:'1rem', fontWeight:800, color:'#e2e8f0' }}>{s.v}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Generate button */}
+        <button onClick={generateRecourse} disabled={loading}
+          style={{
+            width:'100%', padding:'14px', background: loading ? '#334155' : 'linear-gradient(90deg,#2563eb,#4f46e5)',
+            color:'#fff', borderRadius:10, fontWeight:800, fontSize:'.95rem', border:'none', cursor: loading?'wait':'pointer',
+            fontFamily:'inherit', transition:'all .2s', boxShadow: loading ? 'none' : '0 4px 20px rgba(37,99,235,.4)',
+            marginBottom:'1.25rem',
+          }}>
+          {loading ? (
+            <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <span style={{ width:16, height:16, border:'2px solid rgba(255,255,255,.3)', borderTopColor:'#fff', borderRadius:'50%', display:'inline-block', animation:'spin 1s linear infinite' }}/>
+              Generating Recourse Plans...
+            </span>
+          ) : recourseGenerated ? 'Regenerate Recourse' : 'Generate Recourse'}
+        </button>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+        {/* Recourse plans */}
+        {recourseGenerated && (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }} className="fade-in">
+            {RECOURSE_PLANS.map((plan,i) => (
+              <div key={plan.method} className="slide-left" style={{
+                background:'#1e293b', borderRadius:10, padding:'1rem', border:`1.5px solid ${plan.color}44`,
+                animationDelay:`${i*.15}s`,
+              }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:8, height:8, borderRadius:'50%', background:plan.color }}/>
+                    <span style={{ fontWeight:800, fontSize:'.82rem', color:'#e2e8f0' }}>{plan.method}</span>
+                  </div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <span className="chip" style={{ background:`${plan.color}22`, color:plan.color }}>Validity: {plan.validity}</span>
+                    <span className="chip" style={{ background:'#0f172a', color:'#94a3b8' }}>Cost: {plan.cost}</span>
+                  </div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                  {plan.actions.map((a,j)=>(
+                    <div key={j} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', background:'#0f172a', borderRadius:7 }}>
+                      <span style={{ fontSize:'1rem', color: a.direction==='↑' ? '#4ade80' : '#f87171', fontWeight:700 }}>{a.direction}</span>
+                      <span style={{ fontSize:'.8rem', color:'#e2e8f0', fontWeight:600, flex:1 }}>{a.feature}</span>
+                      <span style={{ fontSize:'.8rem', color:plan.color, fontWeight:800 }}>{a.change}</span>
+                      <span className="chip" style={{
+                        background: a.effort==='Low' ? '#dcfce7' : a.effort==='Medium' ? '#fef3c7' : '#fee2e2',
+                        color: a.effort==='Low' ? '#166534' : a.effort==='Medium' ? '#92400e' : '#991b1b',
+                      }}>{a.effort}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </section>
+
+      {/* CTA */}
+      <div style={{ display:'flex', gap:10 }}>
+        <a href="mailto:charm-lab@uwaterloo.ca" style={{
+          flex:1, padding:'14px', background:'linear-gradient(90deg,#059669,#10b981)', color:'#fff', borderRadius:10,
+          fontWeight:800, fontSize:'.9rem', textDecoration:'none', textAlign:'center', transition:'opacity .2s',
+          boxShadow:'0 4px 16px rgba(5,150,105,.3)',
+        }}>Partner with Us</a>
+        <a href="mailto:charm-lab@uwaterloo.ca" style={{
+          flex:1, padding:'14px', background:'#fff', color:'#0f172a', borderRadius:10, fontWeight:700, fontSize:'.9rem',
+          textDecoration:'none', textAlign:'center', border:'1.5px solid #e2e8f0',
+        }}>Schedule an Audit</a>
+      </div>
+    </div>
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* ═══════════════════════════════════════
    FOOTER
-═══════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function Footer() {
-  const linkStyle = { display: 'block', fontSize: '.85rem', color: 'rgba(255,255,255,.55)', textDecoration: 'none', marginBottom: 9, transition: 'color .15s' };
-  const hoverLink = e => e.currentTarget.style.color = '#fff';
-  const leaveLink = e => e.currentTarget.style.color = 'rgba(255,255,255,.55)';
-
   return (
-    <footer style={{ background: '#080f27', padding: '4.5rem 2rem 2rem', borderTop: '1px solid rgba(255,255,255,.06)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: '3rem', marginBottom: '3.5rem' }}>
-
-          {/* Brand */}
+    <footer style={{ background:'#0f172a', padding:'3rem 2rem 2rem', color:'rgba(255,255,255,.6)' }}>
+      <div style={{ maxWidth:1440, margin:'0 auto' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'2.5rem', marginBottom:'2.5rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: '1rem' }}>
-              <div style={{ width: 32, height: 32, background: '#2563eb', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="3.5" cy="8" r="2" fill="white"/>
-                  <circle cx="12.5" cy="3.5" r="2" fill="white"/>
-                  <circle cx="12.5" cy="12.5" r="2" fill="white"/>
-                  <line x1="5.5" y1="8" x2="10.5" y2="4.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
-                  <line x1="5.5" y1="8" x2="10.5" y2="11.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
+            <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:'1rem' }}>
+              <div style={{ width:30, height:30, background:'linear-gradient(135deg,#1e3a8a,#2563eb)', borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 9h4l2-5 2 10 2-5h4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
-              <span style={{ fontWeight: 800, color: '#fff', fontSize: '.92rem', letterSpacing: '-.02em' }}>AlgorithmicRecourse</span>
+              <span style={{ fontWeight:800, color:'#fff', fontSize:'.92rem' }}>AlgorithmicRecourse</span>
             </div>
-            <p style={{ fontSize: '.82rem', color: 'rgba(255,255,255,.45)', lineHeight: 1.65, maxWidth: 220, marginBottom: '1rem' }}>
-              Research on actionable, reliable recourse for AI decision systems.
+            <p style={{ fontSize:'.82rem', lineHeight:1.65, maxWidth:250, marginBottom:'1rem', color:'rgba(255,255,255,.45)' }}>
+              The comprehensive hub for algorithmic recourse research, tools, and enterprise deployment.
             </p>
-            <p style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.28)', lineHeight: 1.6 }}>
-              CHARM Lab<br />University of Waterloo<br />Waterloo, ON, Canada
+            <p style={{ fontSize:'.75rem', color:'rgba(255,255,255,.3)' }}>
+              CHARM Lab · University of Waterloo<br/>Waterloo, ON, Canada
             </p>
           </div>
-
-          {/* Research */}
           <div>
-            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Research</div>
-            {['Papers', 'Code & Datasets', 'Benchmark', 'Methods Library', 'Open Problems'].map(l => (
-              <a key={l} href="#" style={linkStyle} onMouseEnter={hoverLink} onMouseLeave={leaveLink}>{l}</a>
+            <div style={{ fontSize:'.68rem', fontWeight:700, color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:'1rem' }}>Platform</div>
+            {['Research Papers','Benchmark','Methods Library','Idea Board','Open Problems'].map(l=>(
+              <a key={l} href="#" style={{ display:'block', fontSize:'.85rem', color:'rgba(255,255,255,.55)', textDecoration:'none', marginBottom:8, transition:'color .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.color='#fff'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.55)'}>{l}</a>
             ))}
           </div>
-
-          {/* Community */}
           <div>
-            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Community</div>
-            {['GitHub', 'Submit a Method', 'Collaborate', 'Contact Us', 'Mailing List'].map(l => (
-              <a key={l} href="#" style={linkStyle} onMouseEnter={hoverLink} onMouseLeave={leaveLink}>{l}</a>
+            <div style={{ fontSize:'.68rem', fontWeight:700, color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:'1rem' }}>Community</div>
+            {['GitHub','Submit a Paper','Submit a Method','Mailing List','Contact'].map(l=>(
+              <a key={l} href="#" style={{ display:'block', fontSize:'.85rem', color:'rgba(255,255,255,.55)', textDecoration:'none', marginBottom:8, transition:'color .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.color='#fff'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.55)'}>{l}</a>
             ))}
           </div>
-
-          {/* Newsletter */}
           <div>
-            <div style={{ fontSize: '.68rem', fontWeight: 700, color: 'rgba(255,255,255,.28)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '1rem' }}>Stay Updated</div>
-            <p style={{ fontSize: '.82rem', color: 'rgba(255,255,255,.45)', lineHeight: 1.65, marginBottom: '1rem' }}>
-              New papers, benchmarks, and tools — directly to your inbox.
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="email" placeholder="you@university.edu"
-                style={{ flex: 1, padding: '9px 12px', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 7, color: '#fff', fontSize: '.82rem', outline: 'none', fontFamily: 'inherit' }} />
-              <button style={{ padding: '9px 16px', background: '#2563eb', color: '#fff', borderRadius: 7, fontWeight: 700, fontSize: '.85rem', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>→</button>
-            </div>
+            <div style={{ fontSize:'.68rem', fontWeight:700, color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:'1rem' }}>Enterprise</div>
+            {['Partner with Us','Schedule an Audit','Case Studies','Compliance Guide','API Access'].map(l=>(
+              <a key={l} href="#" style={{ display:'block', fontSize:'.85rem', color:'rgba(255,255,255,.55)', textDecoration:'none', marginBottom:8, transition:'color .15s' }}
+                onMouseEnter={e=>e.currentTarget.style.color='#fff'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.55)'}>{l}</a>
+            ))}
           </div>
         </div>
-
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.3)' }}>
-            © 2025 AlgorithmicRecourse · CHARM Lab, University of Waterloo
-          </span>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            {['Privacy', 'Terms', 'Contact'].map(l => (
-              <a key={l} href="#" style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.28)', textDecoration: 'none', transition: 'color .15s' }}
-                onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,.7)'}
-                onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.28)'}>{l}</a>
+        <div style={{ borderTop:'1px solid rgba(255,255,255,.08)', paddingTop:'1.5rem', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'1rem' }}>
+          <span style={{ fontSize:'.75rem', color:'rgba(255,255,255,.3)' }}>© 2025 CHARM Lab, University of Waterloo. All rights reserved.</span>
+          <div style={{ display:'flex', gap:'1.5rem' }}>
+            {['Privacy','Terms','Accessibility'].map(l=>(
+              <a key={l} href="#" style={{ fontSize:'.75rem', color:'rgba(255,255,255,.3)', textDecoration:'none' }}>{l}</a>
             ))}
           </div>
         </div>
@@ -1065,22 +893,80 @@ function Footer() {
   );
 }
 
-/* ═══════════════════════════════════════════════
-   APP ROOT
-═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   APP
+═══════════════════════════════════════ */
 function App() {
+  const [activeTab, setActiveTab] = useState('research');
+  const [isMobile, setIsMobile]   = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   return (
     <>
       <Nav />
       <Hero />
-      <WhatIsRecourse />
-      <Pillars />
-      <InteractiveResearch />
-      <Methods />
-      <Benchmark />
-      <Sandbox />
-      <OpenProblems />
-      <Learn />
+
+      {/* ── TRACK SECTION ── */}
+      <section id="tracks" style={{ borderTop:'1px solid #e2e8f0' }}>
+        {/* Section header */}
+        <div style={{ textAlign:'center', padding:'3rem 2rem 0' }}>
+          <div style={{ fontSize:'.72rem', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'.12em', marginBottom:'.6rem' }}>Choose Your Path</div>
+          <h2 style={{ fontSize:'clamp(1.6rem,3vw,2.2rem)', fontWeight:900, letterSpacing:'-.03em', marginBottom:'.6rem' }}>Three Tracks, One Mission</h2>
+          <p style={{ fontSize:'1rem', color:'#64748b', maxWidth:580, margin:'0 auto', lineHeight:1.7 }}>
+            Whether you study recourse, build it, or deploy it—find exactly what you need.
+          </p>
+        </div>
+
+        {isMobile && <TrackTabs active={activeTab} setActive={setActiveTab} />}
+
+        {isMobile ? (
+          /* Mobile: show one track at a time */
+          <div style={{ maxWidth:640, margin:'0 auto' }}>
+            {activeTab === 'research' && <ResearchTrack />}
+            {activeTab === 'build'    && <BuildTrack />}
+            {activeTab === 'deploy'   && <DeployTrack />}
+          </div>
+        ) : (
+          /* Desktop: 3 independent scroll columns */
+          <div style={{ maxWidth:1440, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr 1fr' }}>
+            {/* Column headers */}
+            <div style={{ gridColumn:'1/-1', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', borderBottom:'1px solid #e2e8f0' }}>
+              {[
+                { label:'Explore Research', color:'#2563eb', bg:'#dbeafe', icon:'🔬', id:'research' },
+                { label:'Build with Recourse', color:'#7c3aed', bg:'#ede9fe', icon:'⚙', id:'build' },
+                { label:'Deploy', color:'#059669', bg:'#dcfce7', icon:'🏢', id:'deploy' },
+              ].map((col,i)=>(
+                <a key={col.id} href={`#${col.id}`} style={{
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'1rem',
+                  borderRight: i<2 ? '1px solid #e2e8f0' : 'none', background:'#f8fafc', textDecoration:'none',
+                  transition:'background .2s',
+                }} onMouseEnter={e=>e.currentTarget.style.background='#fff'} onMouseLeave={e=>e.currentTarget.style.background='#f8fafc'}>
+                  <span style={{ fontSize:'1.1rem' }}>{col.icon}</span>
+                  <span style={{ fontWeight:800, fontSize:'.88rem', color:col.color }}>{col.label}</span>
+                </a>
+              ))}
+            </div>
+
+            {/* Scrollable columns */}
+            <div id="research" style={{ height:'calc(100vh - 64px)', overflowY:'auto', borderRight:'1px solid #e2e8f0' }}>
+              <ResearchTrack />
+            </div>
+            <div id="build" style={{ height:'calc(100vh - 64px)', overflowY:'auto', borderRight:'1px solid #e2e8f0' }}>
+              <BuildTrack />
+            </div>
+            <div id="deploy" style={{ height:'calc(100vh - 64px)', overflowY:'auto' }}>
+              <DeployTrack />
+            </div>
+          </div>
+        )}
+      </section>
+
       <Footer />
     </>
   );
