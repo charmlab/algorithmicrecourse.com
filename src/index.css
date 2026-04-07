@@ -760,25 +760,33 @@ select { font-family: inherit; }
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
   border-radius: 24px;
-  padding: 1.6rem 1.5rem;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  padding: 0;
 }
 
-.why-box-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  font-size: 1.3rem;
+.why-box-illustration {
+  width: 100%;
+  height: 168px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.25rem;
+  padding: 0.5rem 1rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.why-box-text {
+  padding: 1.4rem 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
 }
 
 .why-box-heading {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -0.025em;
   line-height: 1.35;
@@ -786,9 +794,9 @@ select { font-family: inherit; }
 }
 
 .why-box-body {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--muted);
-  line-height: 1.75;
+  line-height: 1.78;
   flex: 1;
 }
 
@@ -929,6 +937,86 @@ select { font-family: inherit; }
   padding-top: 4.5rem;
   padding-bottom: 4.5rem;
 }
+
+.bench-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.bench-github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--text);
+  color: white;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.18s;
+  margin-top: 0.5rem;
+}
+
+.bench-github-btn:hover {
+  background: #2453a6;
+  transform: translateY(-1px);
+}
+
+/* quick-start code block */
+.bench-quickstart {
+  margin-top: 1.75rem;
+  background: rgba(255, 253, 249, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 1.4rem 1.6rem;
+}
+
+.bench-code-block {
+  background: #1c1917;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.bench-code-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.code-indent { padding-left: 1.5rem; }
+
+.code-prompt { color: #6ee7b7; font-weight: 700; }
+.code-cmd    { color: #e2e8f0; }
+.code-kw     { color: #93c5fd; font-weight: 600; }
+.code-fn     { color: #fde68a; }
+.code-str    { color: #6ee7b7; }
+.code-param  { color: #f9a8d4; }
+.code-op     { color: #94a3b8; }
+.code-plain  { color: #e2e8f0; }
+.code-comment{ color: #64748b; font-style: italic; }
+
+.bench-docs-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.bench-docs-link:hover { text-decoration: underline; }
 
 .bench-layout {
   display: grid;

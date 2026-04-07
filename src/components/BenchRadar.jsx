@@ -71,13 +71,26 @@ export default function BenchRadar() {
 
   return (
     <section className="bench-section section-shell" id="benchmark">
-      <div className="section-heading">
-        <span className="eyebrow">RecurseBench</span>
-        <h2>No single method wins everywhere</h2>
-        <p>
-          Each recourse algorithm makes different trade-offs. Toggle methods on and off to
-          compare profiles across validity, sparsity, plausibility, robustness, and speed.
-        </p>
+      <div className="bench-section-header">
+        <div className="section-heading" style={{ marginBottom: 0 }}>
+          <span className="eyebrow">RecurseBench</span>
+          <h2>No single method wins everywhere</h2>
+          <p>
+            Each recourse algorithm makes different trade-offs. Toggle methods on and off to
+            compare profiles across validity, sparsity, plausibility, robustness, and speed.
+          </p>
+        </div>
+        <a
+          href="https://github.com/charmlab/recourse_benchmarks"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bench-github-btn"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
       </div>
 
       <div className="bench-layout">
@@ -143,6 +156,70 @@ export default function BenchRadar() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ── quick-start code ── */}
+      <div className="bench-quickstart">
+        <p className="demo-block-label" style={{ marginBottom: '0.9rem' }}>Quick start</p>
+        <div className="bench-code-block">
+          <div className="bench-code-line">
+            <span className="code-prompt">$</span>
+            <span className="code-cmd"> pip install recourse-benchmarks</span>
+          </div>
+        </div>
+        <div className="bench-code-block" style={{ marginTop: '0.6rem' }}>
+          <div className="bench-code-line">
+            <span className="code-kw">from</span>
+            <span className="code-plain"> recourse_benchmarks </span>
+            <span className="code-kw">import</span>
+            <span className="code-plain"> Evaluator, DATASETS, METHODS</span>
+          </div>
+          <div className="bench-code-line" style={{ marginTop: '0.55rem' }}>
+            <span className="code-plain">evaluator </span>
+            <span className="code-op">= </span>
+            <span className="code-fn">Evaluator</span>
+            <span className="code-plain">(</span>
+          </div>
+          <div className="bench-code-line code-indent">
+            <span className="code-param">dataset</span>
+            <span className="code-op">=</span>
+            <span className="code-str">DATASETS.GERMAN_CREDIT</span>
+            <span className="code-plain">,</span>
+          </div>
+          <div className="bench-code-line code-indent">
+            <span className="code-param">model</span>
+            <span className="code-op">=</span>
+            <span className="code-str">"xgboost"</span>
+            <span className="code-plain">,</span>
+          </div>
+          <div className="bench-code-line">
+            <span className="code-plain">)</span>
+          </div>
+          <div className="bench-code-line" style={{ marginTop: '0.55rem' }}>
+            <span className="code-plain">results </span>
+            <span className="code-op">= </span>
+            <span className="code-plain">evaluator.</span>
+            <span className="code-fn">run</span>
+            <span className="code-plain">(methods=[</span>
+            <span className="code-str">METHODS.DICE</span>
+            <span className="code-plain">, </span>
+            <span className="code-str">METHODS.WACHTER</span>
+            <span className="code-plain">, </span>
+            <span className="code-str">METHODS.FACE</span>
+            <span className="code-plain">])</span>
+          </div>
+          <div className="bench-code-line" style={{ marginTop: '0.55rem' }}>
+            <span className="code-plain">results.</span>
+            <span className="code-fn">radar_plot</span>
+            <span className="code-plain">()</span>
+            <span className="code-comment">  # → reproduces the chart above</span>
+          </div>
+        </div>
+        <a href="https://github.com/charmlab/recourse_benchmarks"
+          target="_blank" rel="noopener noreferrer"
+          className="bench-docs-link">
+          Full documentation on GitHub →
+        </a>
       </div>
     </section>
   );
