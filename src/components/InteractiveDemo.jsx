@@ -1,0 +1,467 @@
+import { useState, useMemo, useId } from 'react';
+
+// ── SVG dimensions ───────────────────────────────────────────
+const W = 520, H = 340;
+const PAD = { l: 54, r: 14, t: 16, b: 44 };
+const PW = W - PAD.l - PAD.r;
+const PH = H - PAD.t - PAD.b;
+
+// ── coordinate helpers ───────────────────────────────────────
+const toSvg = (cs, sr) => ({
+  x: PAD.l + (Math.min(100, Math.max(0, cs)) / 100) * PW,
+  y: PAD.t + PH - (Math.min(110, Math.max(-10, sr)) / 100) * PH,
+});
+
+// ── boundary threshold functions ─────────────────────────────
+function boundaryAt(cs, type) {
+  if (type === 'linear') return 125 - 1.5 * cs;
+  if (type === 'tree') {
+    if (cs < 30) return 80;
+    if (cs < 50) return 55;
+    if (cs < 70) return 30;
+    return 10;
+  }
+  // neural-net: wavy + decay
+  return 28 + 26 * Math.sin((cs * Math.PI) / 58) + Math.max(0, 52 - cs) * 0.55;
+}
+
+function boundaryPts(type) {
+  if (type === 'tree') {
+    return [[0,80],[30,80],[30,55],[50,55],[50,30],[70,30],[70,10],[100,10]];
+  }
+  return Array.from({ length: 51 }, (_, i) => [i * 2, boundaryAt(i * 2, type)]);
+}
+
+function buildBoundaryPath(type) {
+  return boundaryPts(type)
+    .map(([cs, sr], i) => {
+      const p = toSvg(cs, sr);
+      return `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+function buildRejectedFill(type) {
+  const pts = boundaryPts(type).map(([cs, sr]) => toSvg(cs, sr));
+  let d = `M ${PAD.l} ${PAD.t - 60}`;
+  pts.forEach(p => (d += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`));
+  const last = pts[pts.length - 1];
+  d += ` L ${last.x.toFixed(1)} ${PAD.t + PH + 60} L ${PAD.l} ${PAD.t + PH + 60} Z`;
+  return d;
+}
+
+// ── scatter-plot points ──────────────────────────────────────
+const REJECTED_PTS = [
+  [15,22],[32,14],[20,42],[46,16],[11,52],[36,34],[28,7],[52,4],[42,28],[18,62],[8,35],[60,18],
+];
+const APPROVED_PTS = [
+  [76,64],[86,50],[71,82],[91,34],[81,86],[62,72],[96,21],[67,60],[89,76],[78,40],[55,75],
+];
+
+// ── recourse actions ─────────────────────────────────────────
+const ACTIONS = [
+  {
+    id: 'a1',
+    label: 'Raise credit score +40',
+    feature: 'credit',
+    color: '#2453a6',
+    soft: '#dbe7ff',
+    from: [25, 30],
+    to: [65, 30],
+    toRobust: [72, 30],
+    cost: 2.1,
+    costRobust: 2.8,
+  },
+  {
+    id: 'a2',
+    label: 'Increase savings rate +62',
+    feature: 'savings',
+    color: '#1d7a55',
+    soft: '#dff3ea',
+    from: [25, 30],
+    to: [25, 92],
+    toRobust: [25, 96],
+    cost: 3.6,
+    costRobust: 4.0,
+  },
+  {
+    id: 'a3',
+    label: 'Improve both (partial)',
+    feature: 'both',
+    color: '#7c3aed',
+    soft: '#ede9fe',
+    from: [25, 30],
+    to: [48, 56],
+    toRobust: [55, 64],
+    cost: 2.7,
+    costRobust: 3.5,
+  },
+];
+
+const BOUNDARY_LABELS = {
+  linear: 'Linear model (logistic regression)',
+  tree:   'Tree model (gradient boosted)',
+  nn:     'Neural network (deep nonlinear)',
+};
+
+// ── math formulation builder ─────────────────────────────────
+function buildFormulation(nonActionable, robustness, sparsity, delta) {
+  const lines = [
+    <span key="opt" className="math-kw">min</span>,
+    <span key="obj">
+      <sub>x′</sub>{' '}d(x,{' '}x′)
+    </span>,
+    <br key="br0" />,
+    <span key="st" className="math-kw">s.t.</span>,
+    <span key="c0"> h(x′) = +1</span>,
+  ];
+
+  if (nonActionable) {
+    lines.push(<br key="br1" />);
+    lines.push(<span key="na" className="math-kw">{'     '}</span>);
+    lines.push(<span key="nac"> x′<sub>savings</sub> = x<sub>savings</sub></span>);
+  }
+  if (sparsity) {
+    lines.push(<br key="br2" />);
+    lines.push(<span key="sp" className="math-kw">{'     '}</span>);
+    lines.push(<span key="spc"> ‖x′ − x‖<sub>0</sub> ≤ 1</span>);
+  }
+  if (robustness) {
+    lines.push(<br key="br3" />);
+    lines.push(<span key="rb" className="math-kw">{'     '}</span>);
+    lines.push(<span key="rbc"> ∀ε ∈ B<sub>δ</sub>(0): h(x′+ε) = +1</span>);
+    lines.push(<br key="br4" />);
+    lines.push(<span key="d" className="math-kw">{'     '}</span>);
+    lines.push(<span key="dc"> δ = {delta.toFixed(2)}</span>);
+  }
+  return lines;
+}
+
+// ── component ────────────────────────────────────────────────
+export default function InteractiveDemo() {
+  const clipId = useId();
+  const [boundaryType, setBoundaryType] = useState('linear');
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [nonActionable, setNonActionable] = useState(false);
+  const [robustness, setRobustness] = useState(false);
+  const [delta, setDelta] = useState(0.15);
+  const [sparsity, setSparsity] = useState(false);
+
+  const rejectedPath = useMemo(() => buildRejectedFill(boundaryType), [boundaryType]);
+  const boundaryPath = useMemo(() => buildBoundaryPath(boundaryType), [boundaryType]);
+
+  function isDisabled(action) {
+    if (nonActionable && (action.feature === 'savings' || action.feature === 'both')) return true;
+    if (sparsity && action.feature === 'both') return true;
+    return false;
+  }
+
+  function getEndpoint(action) {
+    return robustness ? action.toRobust : action.to;
+  }
+
+  function getActionCost(action) {
+    return robustness ? action.costRobust : action.cost;
+  }
+
+  const youPt = toSvg(25, 30);
+  const formulation = buildFormulation(nonActionable, robustness, sparsity, delta);
+
+  // delta ring radius in SVG units (~15 units = δ=0.15 in normalized space)
+  const deltaRingR = delta * PW * 0.8;
+
+  return (
+    <section className="demo-section section-shell" id="demo">
+      <div className="section-heading">
+        <span className="eyebrow">Interactive Demo</span>
+        <h2>How recourse moves you across the boundary</h2>
+        <p>
+          An AI model draws a decision boundary in feature space. Recourse finds the
+          minimum-cost action that moves you to the approved side — subject to your constraints.
+        </p>
+      </div>
+
+      <div className="demo-layout">
+        {/* ── SVG VISUALIZATION ── */}
+        <div className="demo-canvas-wrap">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            width="100%"
+            style={{ display: 'block', userSelect: 'none' }}
+            aria-label="Recourse visualization"
+          >
+            <defs>
+              <clipPath id={`${clipId}-clip`}>
+                <rect x={PAD.l} y={PAD.t} width={PW} height={PH} />
+              </clipPath>
+              {/* arrowhead markers */}
+              {ACTIONS.map(a => (
+                <marker
+                  key={a.id}
+                  id={`${clipId}-arrow-${a.id}`}
+                  markerWidth="8" markerHeight="8"
+                  refX="6" refY="3"
+                  orient="auto"
+                >
+                  <path d="M0,0 L0,6 L8,3 Z" fill={a.color} />
+                </marker>
+              ))}
+            </defs>
+
+            {/* ── grid ── */}
+            <g clipPath={`url(#${clipId}-clip)`} opacity="0.35">
+              {[0,20,40,60,80,100].map(v => {
+                const { x } = toSvg(v, 0);
+                return <line key={`vg${v}`} x1={x} y1={PAD.t} x2={x} y2={PAD.t + PH} stroke="#cfc4b4" strokeWidth="1" />;
+              })}
+              {[0,20,40,60,80,100].map(v => {
+                const { y } = toSvg(0, v);
+                return <line key={`hg${v}`} x1={PAD.l} y1={y} x2={PAD.l + PW} y2={y} stroke="#cfc4b4" strokeWidth="1" />;
+              })}
+            </g>
+
+            {/* ── region fills ── */}
+            <path
+              d={rejectedPath}
+              fill="rgba(239,68,68,0.07)"
+              clipPath={`url(#${clipId}-clip)`}
+            />
+            <rect
+              x={PAD.l} y={PAD.t} width={PW} height={PH}
+              fill="rgba(16,185,129,0.055)"
+              clipPath={`url(#${clipId}-clip)`}
+            />
+
+            {/* ── boundary ── */}
+            <path
+              key={boundaryType}
+              d={boundaryPath}
+              fill="none"
+              stroke="#1f2933"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              clipPath={`url(#${clipId}-clip)`}
+              style={{ transition: 'opacity 0.3s' }}
+            />
+
+            {/* ── region labels ── */}
+            <text x={PAD.l + 14} y={PAD.t + PH - 10} fontSize="9.5" fontWeight="700" fill="rgba(239,68,68,0.55)" letterSpacing="0.12em" textTransform="uppercase">REJECTED</text>
+            <text x={PAD.l + PW - 70} y={PAD.t + 22} fontSize="9.5" fontWeight="700" fill="rgba(16,185,129,0.6)" letterSpacing="0.12em">APPROVED</text>
+
+            {/* ── rejected background points ── */}
+            {REJECTED_PTS.map(([cs, sr], i) => {
+              const p = toSvg(cs, sr);
+              return (
+                <circle key={`rp${i}`} cx={p.x} cy={p.y} r="4.5"
+                  fill="rgba(239,68,68,0.18)" stroke="rgba(239,68,68,0.35)" strokeWidth="1"
+                  clipPath={`url(#${clipId}-clip)`}
+                />
+              );
+            })}
+
+            {/* ── approved background points ── */}
+            {APPROVED_PTS.map(([cs, sr], i) => {
+              const p = toSvg(cs, sr);
+              return (
+                <circle key={`ap${i}`} cx={p.x} cy={p.y} r="4.5"
+                  fill="rgba(16,185,129,0.18)" stroke="rgba(16,185,129,0.35)" strokeWidth="1"
+                  clipPath={`url(#${clipId}-clip)`}
+                />
+              );
+            })}
+
+            {/* ── action paths ── */}
+            {ACTIONS.map(action => {
+              if (selectedAction !== action.id) return null;
+              if (isDisabled(action)) return null;
+              const ep = getEndpoint(action);
+              const from = toSvg(action.from[0], action.from[1]);
+              const end = toSvg(ep[0], ep[1]);
+
+              return (
+                <g key={`path-${action.id}`} clipPath={`url(#${clipId}-clip)`}>
+                  {/* robustness delta ring */}
+                  {robustness && (
+                    <circle
+                      cx={end.x} cy={end.y}
+                      r={deltaRingR}
+                      fill={`${action.color}12`}
+                      stroke={action.color}
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                      opacity="0.7"
+                    />
+                  )}
+                  {/* path line */}
+                  <line
+                    x1={from.x} y1={from.y}
+                    x2={end.x} y2={end.y}
+                    stroke={action.color}
+                    strokeWidth="2.2"
+                    strokeDasharray="6 4"
+                    markerEnd={`url(#${clipId}-arrow-${action.id})`}
+                    strokeLinecap="round"
+                    style={{ animation: 'fadeIn 0.35s ease both' }}
+                  />
+                  {/* destination point */}
+                  <circle cx={end.x} cy={end.y} r="8"
+                    fill={action.soft} stroke={action.color} strokeWidth="2"
+                    style={{ animation: 'fadeIn 0.35s ease both' }}
+                  />
+                  <circle cx={end.x} cy={end.y} r="3.5" fill={action.color} />
+                  {/* cost label */}
+                  <rect
+                    x={end.x + 10} y={end.y - 14}
+                    width="46" height="18" rx="5"
+                    fill={action.soft} stroke={action.color} strokeWidth="1"
+                  />
+                  <text x={end.x + 15} y={end.y - 2}
+                    fontSize="9.5" fontWeight="700" fill={action.color}>
+                    cost {getActionCost(action).toFixed(1)}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* ── "You" point ── */}
+            <circle cx={youPt.x} cy={youPt.y} r="18"
+              fill="rgba(234,88,12,0.08)" stroke="none"
+              style={{ animation: 'pulse 2.5s ease infinite' }}
+            />
+            <circle cx={youPt.x} cy={youPt.y} r="9"
+              fill="#fff7ed" stroke="#ea580c" strokeWidth="2.2"
+            />
+            <circle cx={youPt.x} cy={youPt.y} r="4" fill="#ea580c" />
+            <text x={youPt.x - 2} y={youPt.y + 26}
+              fontSize="9.5" fontWeight="800" fill="#ea580c"
+              textAnchor="middle" letterSpacing="0.06em">YOU</text>
+
+            {/* ── axes ── */}
+            <line x1={PAD.l} y1={PAD.t + PH} x2={PAD.l + PW} y2={PAD.t + PH}
+              stroke="#cfc4b4" strokeWidth="1.5" />
+            <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + PH}
+              stroke="#cfc4b4" strokeWidth="1.5" />
+
+            {/* ── axis ticks and labels ── */}
+            {[0,20,40,60,80,100].map(v => {
+              const { x } = toSvg(v, 0);
+              return (
+                <g key={`xt${v}`}>
+                  <line x1={x} y1={PAD.t + PH} x2={x} y2={PAD.t + PH + 4} stroke="#9ca3af" strokeWidth="1" />
+                  <text x={x} y={PAD.t + PH + 15} fontSize="9" fill="#9ca3af" textAnchor="middle">{v}</text>
+                </g>
+              );
+            })}
+            {[0,20,40,60,80,100].map(v => {
+              const { y } = toSvg(0, v);
+              return (
+                <g key={`yt${v}`}>
+                  <line x1={PAD.l - 4} y1={y} x2={PAD.l} y2={y} stroke="#9ca3af" strokeWidth="1" />
+                  <text x={PAD.l - 7} y={y + 4} fontSize="9" fill="#9ca3af" textAnchor="end">{v}</text>
+                </g>
+              );
+            })}
+            <text x={PAD.l + PW / 2} y={H - 3}
+              fontSize="10.5" fill="#64707d" fontWeight="600" textAnchor="middle">Credit Score</text>
+            <text
+              x={10} y={PAD.t + PH / 2}
+              fontSize="10.5" fill="#64707d" fontWeight="600" textAnchor="middle"
+              transform={`rotate(-90, 10, ${PAD.t + PH / 2})`}
+            >Savings Rate</text>
+          </svg>
+        </div>
+
+        {/* ── CONTROL PANEL ── */}
+        <div className="demo-controls">
+
+          {/* model type */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">Model type</p>
+            <div className="demo-btn-row">
+              {['linear','tree','nn'].map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`demo-type-btn${boundaryType === t ? ' active' : ''}`}
+                  onClick={() => setBoundaryType(t)}
+                >
+                  {t === 'linear' ? 'Linear' : t === 'tree' ? 'Tree' : 'Neural Net'}
+                </button>
+              ))}
+            </div>
+            <p className="demo-type-desc">{BOUNDARY_LABELS[boundaryType]}</p>
+          </div>
+
+          {/* actions */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">Recourse actions <span className="demo-block-sub">— click to show path</span></p>
+            <div className="demo-action-list">
+              {ACTIONS.map(action => {
+                const disabled = isDisabled(action);
+                const active = selectedAction === action.id && !disabled;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    disabled={disabled}
+                    className={`demo-action${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
+                    style={{ '--ac': action.color, '--as': action.soft }}
+                    onClick={() => setSelectedAction(active ? null : action.id)}
+                  >
+                    <span className="demo-action-dot" style={{ background: action.color }} />
+                    <span className="demo-action-label">{action.label}</span>
+                    <span className="demo-action-cost" style={{ background: action.soft, color: action.color }}>
+                      {disabled ? 'blocked' : `cost ${getActionCost(action).toFixed(1)}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* constraints */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">Constraints</p>
+            <div className="demo-toggle-list">
+              <label className="demo-toggle">
+                <input type="checkbox" checked={nonActionable} onChange={e => setNonActionable(e.target.checked)} />
+                <span className="demo-toggle-track" />
+                <span className="demo-toggle-text">Non-actionable: <em>Savings Rate</em></span>
+              </label>
+              <label className="demo-toggle">
+                <input type="checkbox" checked={sparsity} onChange={e => setSparsity(e.target.checked)} />
+                <span className="demo-toggle-track" />
+                <span className="demo-toggle-text">Sparsity <em>k = 1</em> (single feature)</span>
+              </label>
+              <label className="demo-toggle">
+                <input type="checkbox" checked={robustness} onChange={e => setRobustness(e.target.checked)} />
+                <span className="demo-toggle-track" />
+                <span className="demo-toggle-text">Robustness <em>δ = {delta.toFixed(2)}</em></span>
+              </label>
+              {robustness && (
+                <div className="demo-slider-wrap">
+                  <input
+                    type="range" min="0.05" max="0.35" step="0.01"
+                    value={delta}
+                    onChange={e => setDelta(+e.target.value)}
+                  />
+                  <div className="demo-slider-ends">
+                    <span>tight</span><span>robust</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* math formulation */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">Optimization problem</p>
+            <div className="demo-math">
+              {formulation}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

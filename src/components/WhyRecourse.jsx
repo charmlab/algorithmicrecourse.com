@@ -1,62 +1,48 @@
-const PRINCIPLES = [
+const STAKEHOLDERS = [
   {
-    title: 'More than explanation',
-    body: 'Recourse moves beyond telling people why a model said no. It gives them a concrete path toward a better outcome.',
+    icon: '👤',
+    audience: 'For individuals',
+    color: '#2453a6',
+    soft: '#dbe7ff',
+    headline: 'Understand why you were rejected — and what to do next',
+    body: 'When a loan, job, or benefit is denied by an automated system, recourse gives you a concrete, actionable path forward. Instead of an opaque "no," you get a specific set of steps that would lead to approval.',
   },
   {
-    title: 'Where research meets product',
-    body: 'Good recourse balances validity, cost, feasibility, and fairness. That makes it a design problem as much as a modeling problem.',
+    icon: '⚖️',
+    audience: 'For regulators',
+    color: '#8a4b18',
+    soft: '#f7e5d1',
+    headline: 'Make automated decisions legally accountable',
+    body: 'Regulations like the EU AI Act and GDPR Article 22 require that consequential automated decisions be explainable and contestable. Algorithmic recourse operationalises this right — turning legal obligations into verifiable system properties.',
   },
   {
-    title: 'Critical for deployment',
-    body: 'In lending, hiring, insurance, and healthcare, actionable guidance can improve trust, retention, and auditability.',
+    icon: '🏦',
+    audience: 'For businesses',
+    color: '#1d7a55',
+    soft: '#dff3ea',
+    headline: 'Build trust, reduce appeals, and demonstrate fairness',
+    body: 'Deploying a recourse system signals transparency to customers and auditors alike. It reduces the volume of manual appeals, produces an audit trail for compliance reviews, and turns rejections into retention opportunities.',
   },
 ];
 
 export default function WhyRecourse() {
   return (
-    <section id="about" className="section-shell">
+    <section className="why-section section-shell" id="about">
       <div className="section-heading">
-        <span className="eyebrow">Why Recourse Matters</span>
-        <h2>Decision systems need better answers than a rejection.</h2>
-        <p>
-          Algorithmic recourse sits at the intersection of responsible AI, product
-          design, and operational deployment. It asks a simple question: if a model
-          denies someone access, what realistic action could change that outcome?
-        </p>
+        <span className="eyebrow">Why it matters</span>
+        <h2>Recourse is accountability made actionable</h2>
       </div>
-
-      <div className="why-grid">
-        <div className="why-frame card-lift">
-          <div className="why-flow">
-            <div className="why-step">
-              <span>01</span>
-              <strong>Model decision</strong>
-              <p>A classifier produces an unfavorable result.</p>
+      <div className="why-boxes">
+        {STAKEHOLDERS.map(s => (
+          <div key={s.audience} className="why-box card-lift">
+            <div className="why-box-icon" style={{ background: s.soft, color: s.color }}>
+              {s.icon}
             </div>
-            <div className="why-arrow" />
-            <div className="why-step">
-              <span>02</span>
-              <strong>Actionable guidance</strong>
-              <p>The system identifies feasible, human-understandable changes.</p>
-            </div>
-            <div className="why-arrow" />
-            <div className="why-step">
-              <span>03</span>
-              <strong>Institutional value</strong>
-              <p>Teams improve usability, trust, and governance at the same time.</p>
-            </div>
+            <span className="eyebrow" style={{ color: s.color }}>{s.audience}</span>
+            <h3 className="why-box-heading">{s.headline}</h3>
+            <p className="why-box-body">{s.body}</p>
           </div>
-        </div>
-
-        <div className="why-principles">
-          {PRINCIPLES.map((item) => (
-            <article key={item.title} className="principle-card card-lift">
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
-            </article>
-          ))}
-        </div>
+        ))}
       </div>
     </section>
   );

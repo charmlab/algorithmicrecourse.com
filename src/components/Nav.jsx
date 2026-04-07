@@ -10,10 +10,10 @@ export default function Nav() {
   }, []);
 
   const links = [
-    { label: 'About', href: '#about' },
-    { label: 'Paths', href: '#paths' },
-    { label: 'Research', href: '#research-panel' },
-    { label: 'Deploy', href: '#deploy-panel' },
+    { label: 'Demo',      href: '#demo' },
+    { label: 'Why',       href: '#about' },
+    { label: 'Ideas',     href: '#ideas' },
+    { label: 'Benchmark', href: '#benchmark' },
   ];
 
   return (
