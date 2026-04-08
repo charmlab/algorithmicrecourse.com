@@ -379,7 +379,7 @@ export default function InteractiveDemo() {
               {['linear','tree','nn'].map(t => (
                 <button key={t} type="button"
                   className={`demo-type-btn${boundaryType === t ? ' active' : ''}`}
-                  onClick={() => { setBoundaryType(t); setSelectedAction(null); }}>
+                  onClick={() => setBoundaryType(t)}>
                   {t === 'linear' ? 'Linear' : t === 'tree' ? 'Tree' : 'Neural Net'}
                 </button>
               ))}
