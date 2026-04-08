@@ -161,21 +161,6 @@ const BOUNDARY_LABELS = {
   nn:     'Neural network (deep nonlinear)',
 };
 
-// ── math formulation builder ─────────────────────────────────
-function buildFormulation(nonActionable, robustness, sparsity, delta) {
-  return (
-    <>
-      <span className="math-kw">min</span>
-      <sub>x′</sub>
-      {' d(x, x′)'}<br />
-      <span className="math-kw">s.t.</span>
-      {' h(x′) = +1'}
-      {nonActionable && <><br /><span className="math-kw">{'     '}</span>{' x′'}<sub>savings</sub>{' = x'}<sub>savings</sub></>}
-      {sparsity      && <><br /><span className="math-kw">{'     '}</span>{' ‖x′ − x‖'}<sub>0</sub>{' ≤ 1'}</>}
-      {robustness    && <><br /><span className="math-kw">{'     '}</span>{' ∀ε ∈ B'}<sub>δ</sub>{'(0): h(x′+ε) = +1'}<br /><span className="math-kw">{'     '}</span>{` δ = ${delta.toFixed(2)}`}</>}
-    </>
-  );
-}
 
 // ── component ────────────────────────────────────────────────
 export default function InteractiveDemo() {
@@ -225,7 +210,6 @@ export default function InteractiveDemo() {
   const selCost     = allEndpoints[selectedAction]?.cost ?? 0;
 
   const youPt = toSvg(25, 30);
-  const formulation = buildFormulation(nonActionable, robustness, sparsity, delta);
 
   return (
     <section className="demo-section section-shell" id="demo">
@@ -376,6 +360,57 @@ export default function InteractiveDemo() {
               fontWeight="600" textAnchor="middle"
               transform={`rotate(-90, 10, ${PAD.t+PH/2})`}>Savings Rate</text>
           </svg>
+
+          {/* ── Math overlay: frosted glass, top-left, visible on hover ── */}
+          <div className="demo-math-overlay" aria-hidden="true">
+            <p className="dmo-title">Optimization Problem</p>
+            <table className="dmo-table">
+              <tbody>
+                <tr>
+                  <td className="dmo-kw">
+                    <em>min</em><sub style={{ fontStyle: 'normal', fontSize: '0.7em' }}>x′</sub>
+                  </td>
+                  <td className="dmo-expr">d(x,&thinsp;x′)</td>
+                </tr>
+                <tr>
+                  <td className="dmo-kw"><em>s.t.</em></td>
+                  <td className="dmo-expr">h(x′) = +1</td>
+                </tr>
+                {nonActionable && (
+                  <tr>
+                    <td />
+                    <td className="dmo-expr">
+                      x′<sub>sav</sub>&thinsp;=&thinsp;x<sub>sav</sub>
+                    </td>
+                  </tr>
+                )}
+                {sparsity && (
+                  <tr>
+                    <td />
+                    <td className="dmo-expr">
+                      ‖x′&thinsp;−&thinsp;x‖<sub>0</sub>&thinsp;≤&thinsp;1
+                    </td>
+                  </tr>
+                )}
+                {robustness && (
+                  <>
+                    <tr>
+                      <td />
+                      <td className="dmo-expr">
+                        ∀ε ∈ B<sub>δ</sub>(0):&thinsp;h(x′+ε) = +1
+                      </td>
+                    </tr>
+                    <tr>
+                      <td />
+                      <td className="dmo-expr dmo-delta">
+                        δ&thinsp;=&thinsp;{delta.toFixed(2)}
+                      </td>
+                    </tr>
+                  </>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* ── CONTROL PANEL ── */}
@@ -482,11 +517,6 @@ export default function InteractiveDemo() {
             </div>
           </div>
 
-          {/* math formulation */}
-          <div className="demo-control-block">
-            <p className="demo-block-label">Optimization problem</p>
-            <div className="demo-math">{formulation}</div>
-          </div>
         </div>
       </div>
     </section>

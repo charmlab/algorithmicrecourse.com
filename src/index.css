@@ -534,6 +534,85 @@ select { font-family: inherit; }
   box-shadow: var(--shadow);
   overflow: hidden;
   padding: 0.6rem;
+  position: relative;
+}
+
+/* ── Math formulation hover overlay ── */
+.demo-math-overlay {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.24s ease, transform 0.24s ease;
+  background: rgba(255, 253, 249, 0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(207, 196, 180, 0.85);
+  border-radius: 16px;
+  padding: 0.75rem 1.05rem 0.9rem;
+  box-shadow: 0 10px 32px rgba(31, 41, 51, 0.1);
+}
+
+.demo-canvas-wrap:hover .demo-math-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dmo-title {
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.dmo-table {
+  border-collapse: collapse;
+  font-family: 'Georgia', 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 0.84rem;
+}
+
+.dmo-table td {
+  padding: 1.5px 0;
+  vertical-align: baseline;
+}
+
+.dmo-kw {
+  color: #2453a6;
+  font-weight: 700;
+  font-style: italic;
+  padding-right: 0.7rem;
+  white-space: nowrap;
+  font-size: 0.87rem;
+}
+
+.dmo-expr {
+  color: #1f2933;
+  white-space: nowrap;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+}
+
+.dmo-expr sub {
+  font-size: 0.67em;
+  vertical-align: sub;
+  line-height: 0;
+}
+
+.dmo-delta {
+  color: #64707d;
+  font-style: italic;
+  font-size: 0.81rem;
+}
+
+.dmo-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 0.45rem 0 0.35rem;
 }
 
 .demo-controls {
