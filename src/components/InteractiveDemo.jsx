@@ -195,25 +195,34 @@ export default function InteractiveDemo() {
   const deltaRingR = delta * PH * 0.48;
   const BASE_MARGIN = 5; // px margin when robustness off
 
-  function isDisabled(action) {
-    if (nonActionable && (action.feature === 'savings' || action.feature === 'both')) return true;
-    if (sparsity && action.feature === 'both') return true;
+  function isDisabled(action, na = nonActionable, sp = sparsity) {
+    if (na && (action.feature === 'savings' || action.feature === 'both')) return true;
+    if (sp && action.feature === 'both') return true;
     return false;
   }
 
-  // Compute current endpoint + cost for the selected action
-  const { endpoint: selEndpoint, cost: selCost } = useMemo(() => {
-    const action = ACTIONS.find(a => a.id === selectedAction);
-    if (!action || isDisabled(action)) return { endpoint: null, cost: 0 };
+  // Compute live endpoints + costs for ALL actions whenever anything relevant changes.
+  // This means every action badge shows an up-to-date cost reflecting the current
+  // boundary shape, robustness level, and constraint set.
+  const allEndpoints = useMemo(() => {
     const targetDist = robustness ? deltaRingR : BASE_MARGIN;
-    const ep = computeEndpoint(selectedAction, boundaryType, targetDist);
-    // Scale cost proportionally to how far the endpoint moved vs. reference
-    const baseDist = Math.hypot(action.baseTo[0] - 25, action.baseTo[1] - 30);
-    const epDist   = Math.hypot(ep[0] - 25, ep[1] - 30);
-    const cost = +(action.cost * Math.max(1, epDist / Math.max(baseDist, 1))).toFixed(1);
-    return { endpoint: ep, cost };
+    const result = {};
+    for (const action of ACTIONS) {
+      if (isDisabled(action)) continue;
+      const ep = computeEndpoint(action.id, boundaryType, targetDist);
+      const baseDist = Math.hypot(action.baseTo[0] - 25, action.baseTo[1] - 30);
+      const epDist   = Math.hypot(ep[0] - 25, ep[1] - 30);
+      result[action.id] = {
+        ep,
+        cost: +(action.cost * Math.max(1, epDist / Math.max(baseDist, 1))).toFixed(1),
+      };
+    }
+    return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAction, boundaryType, robustness, deltaRingR]);
+  }, [boundaryType, robustness, deltaRingR, nonActionable, sparsity]);
+
+  const selEndpoint = allEndpoints[selectedAction]?.ep ?? null;
+  const selCost     = allEndpoints[selectedAction]?.cost ?? 0;
 
   const youPt = toSvg(25, 30);
   const formulation = buildFormulation(nonActionable, robustness, sparsity, delta);
@@ -396,8 +405,8 @@ export default function InteractiveDemo() {
               {ACTIONS.map(action => {
                 const disabled = isDisabled(action);
                 const active = selectedAction === action.id && !disabled;
-                // Show dynamic cost when this action is active, else base cost
-                const displayCost = active ? selCost : action.cost;
+                // All buttons show live cost — updates with model type, δ, and constraints
+                const liveCost = allEndpoints[action.id]?.cost ?? action.cost;
                 return (
                   <button key={action.id} type="button" disabled={disabled}
                     className={`demo-action${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
@@ -407,7 +416,7 @@ export default function InteractiveDemo() {
                     <span className="demo-action-label">{action.label}</span>
                     <span className="demo-action-cost"
                       style={{ background: action.soft, color: action.color }}>
-                      {disabled ? 'blocked' : `cost ${displayCost}`}
+                      {disabled ? 'blocked' : `cost ${liveCost}`}
                     </span>
                   </button>
                 );
@@ -421,7 +430,15 @@ export default function InteractiveDemo() {
             <div className="demo-toggle-list">
               <label className="demo-toggle">
                 <input type="checkbox" checked={nonActionable}
-                  onChange={e => { setNonActionable(e.target.checked); setSelectedAction(null); }}/>
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setNonActionable(checked);
+                    // Only deselect if the active action becomes blocked by this constraint
+                    if (checked && selectedAction) {
+                      const sel = ACTIONS.find(a => a.id === selectedAction);
+                      if (sel && isDisabled(sel, checked, sparsity)) setSelectedAction(null);
+                    }
+                  }}/>
                 <span className="demo-toggle-track"/>
                 <span className="demo-toggle-text">
                   Non-actionable: <em>Savings Rate</em>
@@ -429,7 +446,15 @@ export default function InteractiveDemo() {
               </label>
               <label className="demo-toggle">
                 <input type="checkbox" checked={sparsity}
-                  onChange={e => { setSparsity(e.target.checked); setSelectedAction(null); }}/>
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setSparsity(checked);
+                    // Only deselect if the active action becomes blocked by this constraint
+                    if (checked && selectedAction) {
+                      const sel = ACTIONS.find(a => a.id === selectedAction);
+                      if (sel && isDisabled(sel, nonActionable, checked)) setSelectedAction(null);
+                    }
+                  }}/>
                 <span className="demo-toggle-track"/>
                 <span className="demo-toggle-text">Sparsity <em>k = 1</em> (one feature only)</span>
               </label>
