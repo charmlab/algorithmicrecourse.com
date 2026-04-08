@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
-  PolarRadiusAxis, Tooltip, ResponsiveContainer, Legend,
+  PolarRadiusAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
 // Normalised scores 0-100 across 5 axes (higher = better on all)
@@ -94,8 +94,9 @@ export default function BenchRadar() {
       </div>
 
       <div className="bench-layout">
+        {/* ── Chart card with embedded method toggles ── */}
         <div className="bench-chart-wrap">
-          <ResponsiveContainer width="100%" height={380}>
+          <ResponsiveContainer width="100%" height={360}>
             <RadarChart data={BENCH_DATA} outerRadius="72%">
               <PolarGrid stroke="#ded7cb" />
               <PolarAngleAxis
@@ -119,35 +120,33 @@ export default function BenchRadar() {
                 />
               ))}
               <Tooltip content={<CustomTooltip />} />
-              <Legend
-                wrapperStyle={{ display: 'none' }} // we render our own
-              />
             </RadarChart>
           </ResponsiveContainer>
-        </div>
 
-        <div className="bench-sidebar">
-          <p className="demo-block-label" style={{ marginBottom: '1rem' }}>Toggle methods</p>
-          <div className="bench-method-list">
+          {/* Method toggle chips — embedded in chart card */}
+          <div className="bench-method-chips">
             {METHODS.map(m => {
               const on = active.has(m.key);
               return (
                 <button
                   key={m.key}
                   type="button"
-                  className={`bench-method-btn${on ? ' active' : ''}`}
-                  style={{ '--mc': m.color, '--ms': `${m.color}22` }}
+                  className={`bench-method-chip${on ? ' active' : ''}`}
+                  style={{ '--mc': m.color }}
                   onClick={() => toggle(m.key)}
                 >
-                  <span className="bench-method-dot" style={{ background: on ? m.color : '#ded7cb' }} />
+                  <span className="bench-method-dot" style={{ background: on ? m.color : '#cfc4b4' }} />
                   {m.label}
                 </button>
               );
             })}
           </div>
+        </div>
 
-          <div className="bench-metric-legend">
-            <p className="demo-block-label" style={{ marginBottom: '0.75rem' }}>Metric guide</p>
+        {/* ── Sidebar: metric guide only ── */}
+        <div className="bench-sidebar">
+          <p className="demo-block-label" style={{ marginBottom: '0.75rem' }}>Metric guide</p>
+          <div className="bench-metric-legend" style={{ borderTop: 'none', paddingTop: 0 }}>
             {Object.entries(METRIC_NOTES).map(([k, v]) => (
               <div key={k} className="bench-metric-row">
                 <span className="bench-metric-name">{k}</span>
