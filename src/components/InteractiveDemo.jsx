@@ -360,57 +360,6 @@ export default function InteractiveDemo() {
               fontWeight="600" textAnchor="middle"
               transform={`rotate(-90, 10, ${PAD.t+PH/2})`}>Savings Rate</text>
           </svg>
-
-          {/* ── Math overlay: frosted glass, top-left, visible on hover ── */}
-          <div className="demo-math-overlay" aria-hidden="true">
-            <p className="dmo-title">Optimization Problem</p>
-            <table className="dmo-table">
-              <tbody>
-                <tr>
-                  <td className="dmo-kw">
-                    <em>min</em><sub style={{ fontStyle: 'normal', fontSize: '0.7em' }}>x′</sub>
-                  </td>
-                  <td className="dmo-expr">d(x,&thinsp;x′)</td>
-                </tr>
-                <tr>
-                  <td className="dmo-kw"><em>s.t.</em></td>
-                  <td className="dmo-expr">h(x′) = +1</td>
-                </tr>
-                {nonActionable && (
-                  <tr>
-                    <td />
-                    <td className="dmo-expr">
-                      x′<sub>sav</sub>&thinsp;=&thinsp;x<sub>sav</sub>
-                    </td>
-                  </tr>
-                )}
-                {sparsity && (
-                  <tr>
-                    <td />
-                    <td className="dmo-expr">
-                      ‖x′&thinsp;−&thinsp;x‖<sub>0</sub>&thinsp;≤&thinsp;1
-                    </td>
-                  </tr>
-                )}
-                {robustness && (
-                  <>
-                    <tr>
-                      <td />
-                      <td className="dmo-expr">
-                        ∀ε ∈ B<sub>δ</sub>(0):&thinsp;h(x′+ε) = +1
-                      </td>
-                    </tr>
-                    <tr>
-                      <td />
-                      <td className="dmo-expr dmo-delta">
-                        δ&thinsp;=&thinsp;{delta.toFixed(2)}
-                      </td>
-                    </tr>
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
 
         {/* ── CONTROL PANEL ── */}
@@ -431,34 +380,6 @@ export default function InteractiveDemo() {
             <p className="demo-type-desc">{BOUNDARY_LABELS[boundaryType]}</p>
           </div>
 
-          {/* actions */}
-          <div className="demo-control-block">
-            <p className="demo-block-label">
-              Recourse actions <span className="demo-block-sub">— click to show path</span>
-            </p>
-            <div className="demo-action-list">
-              {ACTIONS.map(action => {
-                const disabled = isDisabled(action);
-                const active = selectedAction === action.id && !disabled;
-                // All buttons show live cost — updates with model type, δ, and constraints
-                const liveCost = allEndpoints[action.id]?.cost ?? action.cost;
-                return (
-                  <button key={action.id} type="button" disabled={disabled}
-                    className={`demo-action${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
-                    style={{ '--ac': action.color, '--as': action.soft }}
-                    onClick={() => setSelectedAction(active ? null : action.id)}>
-                    <span className="demo-action-dot" style={{ background: action.color }}/>
-                    <span className="demo-action-label">{action.label}</span>
-                    <span className="demo-action-cost"
-                      style={{ background: action.soft, color: action.color }}>
-                      {disabled ? 'blocked' : `cost ${liveCost}`}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* constraints */}
           <div className="demo-control-block">
             <p className="demo-block-label">Constraints</p>
@@ -468,7 +389,6 @@ export default function InteractiveDemo() {
                   onChange={e => {
                     const checked = e.target.checked;
                     setNonActionable(checked);
-                    // Only deselect if the active action becomes blocked by this constraint
                     if (checked && selectedAction) {
                       const sel = ACTIONS.find(a => a.id === selectedAction);
                       if (sel && isDisabled(sel, checked, sparsity)) setSelectedAction(null);
@@ -484,7 +404,6 @@ export default function InteractiveDemo() {
                   onChange={e => {
                     const checked = e.target.checked;
                     setSparsity(checked);
-                    // Only deselect if the active action becomes blocked by this constraint
                     if (checked && selectedAction) {
                       const sel = ACTIONS.find(a => a.id === selectedAction);
                       if (sel && isDisabled(sel, nonActionable, checked)) setSelectedAction(null);
@@ -508,16 +427,71 @@ export default function InteractiveDemo() {
                   <div className="demo-slider-ends">
                     <span>tight (δ=0.05)</span><span>robust (δ=0.35)</span>
                   </div>
-                  <p className="demo-type-desc" style={{ marginTop: '0.4rem' }}>
-                    The entire δ-circle lies on the approved side. Larger δ pushes
-                    the endpoint further from the boundary — increasing cost.
-                  </p>
                 </div>
               )}
             </div>
           </div>
 
+          {/* recourse actions */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">
+              Recourse actions <span className="demo-block-sub">— click to show path</span>
+            </p>
+            <div className="demo-action-list">
+              {ACTIONS.map(action => {
+                const disabled = isDisabled(action);
+                const active = selectedAction === action.id && !disabled;
+                const liveCost = allEndpoints[action.id]?.cost ?? action.cost;
+                return (
+                  <button key={action.id} type="button" disabled={disabled}
+                    className={`demo-action${active ? ' active' : ''}${disabled ? ' disabled' : ''}`}
+                    style={{ '--ac': action.color, '--as': action.soft }}
+                    onClick={() => setSelectedAction(active ? null : action.id)}>
+                    <span className="demo-action-dot" style={{ background: action.color }}/>
+                    <span className="demo-action-label">{action.label}</span>
+                    <span className="demo-action-cost"
+                      style={{ background: action.soft, color: action.color }}>
+                      {disabled ? 'blocked' : `cost ${liveCost}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
+      </div>
+
+      {/* ── Lagrangian bar — full width, below both columns ── */}
+      <div className="demo-lagrangian">
+        <span className="dlag-label">Lagrangian</span>
+        <span className="dlag-math">
+          <span className="dlag-base">
+            {'ℒ(x′) = d(x, x′) + λ'}
+            <sub>1</sub>
+            {' [h(x′) ≠ +1]'}
+          </span>
+          {nonActionable && (
+            <span className="dlag-term dlag-c1" key="na">
+              {' + λ'}<sub>2</sub>{' |x′'}
+              <sub>sav</sub>{' − x'}<sub>sav</sub>{' |'}
+            </span>
+          )}
+          {sparsity && (
+            <span className="dlag-term dlag-c2" key="sp">
+              {' + λ'}<sub>3</sub>{' ‖x′ − x‖'}<sub>0</sub>
+            </span>
+          )}
+          {robustness && (
+            <span className="dlag-term dlag-c3" key="rb">
+              {' + λ'}<sub>4</sub>
+              {' max'}
+              <sub>{'ε ∈ B\u{1D6FF}(0)'}</sub>
+              {' [h(x′+ε) ≠ +1]'}
+              <span className="dlag-delta">{`   (δ = ${delta.toFixed(2)})`}</span>
+            </span>
+          )}
+        </span>
       </div>
     </section>
   );
