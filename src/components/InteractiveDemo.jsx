@@ -12,8 +12,21 @@ const toSvg = (cs, sr) => ({
   y: PAD.t + PH - (Math.min(110, Math.max(-10, sr)) / 100) * PH,
 });
 
-// ── boundary threshold functions ─────────────────────────────
-function boundaryAt(cs, type) {
+// ── boundary threshold functions (ds = 'blobs' | 'moons') ────
+function boundaryAt(cs, type, ds = 'blobs') {
+  if (ds === 'moons') {
+    if (type === 'linear') return 105 - 1.2 * cs;
+    if (type === 'tree') {
+      if (cs < 25) return 54;
+      if (cs < 50) return 42;
+      if (cs < 65) return 28;
+      if (cs < 80) return 16;
+      return 10;
+    }
+    // Neural net: S-curve that follows the gap between the crescents
+    return 60 - 0.5 * cs + 12 * Math.sin((cs * Math.PI) / 100);
+  }
+  // blobs (original linear-sep)
   if (type === 'linear') return 125 - 1.5 * cs;
   if (type === 'tree') {
     if (cs < 30) return 80;
@@ -21,19 +34,20 @@ function boundaryAt(cs, type) {
     if (cs < 70) return 30;
     return 10;
   }
-  // neural-net: wavy + decay
   return 28 + 26 * Math.sin((cs * Math.PI) / 58) + Math.max(0, 52 - cs) * 0.55;
 }
 
-function boundaryPts(type) {
+function boundaryPts(type, ds = 'blobs') {
   if (type === 'tree') {
+    if (ds === 'moons')
+      return [[0,54],[25,54],[25,42],[50,42],[50,28],[65,28],[65,16],[80,16],[80,10],[100,10]];
     return [[0,80],[30,80],[30,55],[50,55],[50,30],[70,30],[70,10],[100,10]];
   }
-  return Array.from({ length: 51 }, (_, i) => [i * 2, boundaryAt(i * 2, type)]);
+  return Array.from({ length: 51 }, (_, i) => [i * 2, boundaryAt(i * 2, type, ds)]);
 }
 
-function buildBoundaryPath(type) {
-  return boundaryPts(type)
+function buildBoundaryPath(type, ds) {
+  return boundaryPts(type, ds)
     .map(([cs, sr], i) => {
       const p = toSvg(cs, sr);
       return `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
@@ -41,8 +55,8 @@ function buildBoundaryPath(type) {
     .join(' ');
 }
 
-function buildRejectedFill(type) {
-  const pts = boundaryPts(type).map(([cs, sr]) => toSvg(cs, sr));
+function buildRejectedFill(type, ds) {
+  const pts = boundaryPts(type, ds).map(([cs, sr]) => toSvg(cs, sr));
   let d = `M ${PAD.l} ${PAD.t - 60}`;
   pts.forEach(p => (d += ` L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`));
   const last = pts[pts.length - 1];
@@ -59,10 +73,9 @@ function distToSegSvg(px, py, x1, y1, x2, y2) {
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
-// Minimum SVG-pixel distance from (cs,sr) to the boundary curve
-function distToBoundarySvg(cs, sr, boundaryType) {
+function distToBoundarySvg(cs, sr, boundaryType, ds) {
   const { x: px, y: py } = toSvg(cs, sr);
-  const pts = boundaryPts(boundaryType);
+  const pts = boundaryPts(boundaryType, ds);
   let minDist = Infinity;
   for (let i = 0; i < pts.length - 1; i++) {
     const p1 = toSvg(pts[i][0], pts[i][1]);
@@ -72,42 +85,36 @@ function distToBoundarySvg(cs, sr, boundaryType) {
   return minDist;
 }
 
-function isApproved(cs, sr, boundaryType) {
-  return sr > boundaryAt(cs, boundaryType);
+function isApproved(cs, sr, boundaryType, ds) {
+  return sr > boundaryAt(cs, boundaryType, ds);
 }
 
-// Walk along each action's direction until perpendicular SVG-pixel distance
-// from the boundary ≥ targetDist.  This guarantees the δ-ring fits entirely
-// on the approved side when drawn with radius = targetDist.
-function computeEndpoint(actionId, boundaryType, targetDist) {
+function computeEndpoint(actionId, boundaryType, targetDist, ds) {
   if (actionId === 'a1') {
-    // Move credit score right; savings rate fixed at 30
     for (let cs = 55; cs <= 100; cs += 0.4) {
-      if (isApproved(cs, 30, boundaryType) &&
-          distToBoundarySvg(cs, 30, boundaryType) >= targetDist) {
+      if (isApproved(cs, 30, boundaryType, ds) &&
+          distToBoundarySvg(cs, 30, boundaryType, ds) >= targetDist) {
         return [cs, 30];
       }
     }
     return [100, 30];
   }
   if (actionId === 'a2') {
-    // Move savings rate up; credit score fixed at 25
     for (let sr = 70; sr <= 100; sr += 0.4) {
-      if (isApproved(25, sr, boundaryType) &&
-          distToBoundarySvg(25, sr, boundaryType) >= targetDist) {
+      if (isApproved(25, sr, boundaryType, ds) &&
+          distToBoundarySvg(25, sr, boundaryType, ds) >= targetDist) {
         return [25, sr];
       }
     }
     return [25, 100];
   }
   if (actionId === 'a3') {
-    // Walk diagonally toward (55,65) from (25,30), extend further if needed
     const ux = 30 / Math.hypot(30, 35), uy = 35 / Math.hypot(30, 35);
     for (let t = 5; t <= 90; t += 0.4) {
       const cs = 25 + ux * t, sr = 30 + uy * t;
       if (cs > 100 || sr > 100) break;
-      if (isApproved(cs, sr, boundaryType) &&
-          distToBoundarySvg(cs, sr, boundaryType) >= targetDist) {
+      if (isApproved(cs, sr, boundaryType, ds) &&
+          distToBoundarySvg(cs, sr, boundaryType, ds) >= targetDist) {
         return [cs, sr];
       }
     }
@@ -117,42 +124,31 @@ function computeEndpoint(actionId, boundaryType, targetDist) {
 }
 
 // ── scatter-plot points ──────────────────────────────────────
-const REJECTED_PTS = [
+// Dataset 1: two blob clusters (linearly separable)
+const REJECTED_BLOBS = [
   [15,22],[32,14],[20,42],[46,16],[11,52],[36,34],[28,7],[52,4],[42,28],[18,62],[8,35],[60,18],
 ];
-const APPROVED_PTS = [
+const APPROVED_BLOBS = [
   [76,64],[86,50],[71,82],[91,34],[81,86],[62,72],[96,21],[67,60],[89,76],[78,40],[55,75],
 ];
 
-// ── actions (baseTo used only for cost-scaling reference) ────
+// Dataset 2: two-moons (crescent-shaped, requires nonlinear boundary)
+// Rejected moon: lower arc of left circle (center≈35,43 r≈22)
+const REJECTED_MOONS = [
+  [13,43],[17,32],[24,23],[35,20],[46,23],[53,32],[57,43],
+  [20,37],[30,19],[41,18],[50,37],[11,49],[58,50],
+];
+// Approved moon: upper arc of right circle (center≈65,57 r≈22)
+const APPROVED_MOONS = [
+  [43,57],[50,71],[62,79],[73,79],[80,71],[87,57],
+  [56,76],[67,82],[76,74],[85,63],[44,63],[88,52],
+];
+
+// ── actions ──────────────────────────────────────────────────
 const ACTIONS = [
-  {
-    id: 'a1',
-    label: 'Raise credit score',
-    feature: 'credit',
-    color: '#2453a6',
-    soft: '#dbe7ff',
-    baseTo: [68, 30],    // reference point for cost denominator
-    cost: 2.1,
-  },
-  {
-    id: 'a2',
-    label: 'Increase savings rate',
-    feature: 'savings',
-    color: '#1d7a55',
-    soft: '#dff3ea',
-    baseTo: [25, 91],
-    cost: 3.6,
-  },
-  {
-    id: 'a3',
-    label: 'Improve both (partial)',
-    feature: 'both',
-    color: '#7c3aed',
-    soft: '#ede9fe',
-    baseTo: [49, 57],
-    cost: 2.7,
-  },
+  { id:'a1', label:'Raise credit score',    feature:'credit',  color:'#2453a6', soft:'#dbe7ff', baseTo:[68,30],  cost:2.1 },
+  { id:'a2', label:'Increase savings rate', feature:'savings', color:'#1d7a55', soft:'#dff3ea', baseTo:[25,91],  cost:3.6 },
+  { id:'a3', label:'Improve both (partial)',feature:'both',    color:'#7c3aed', soft:'#ede9fe', baseTo:[49,57],  cost:2.7 },
 ];
 
 const BOUNDARY_LABELS = {
@@ -161,24 +157,39 @@ const BOUNDARY_LABELS = {
   nn:     'Neural network (deep nonlinear)',
 };
 
+// ── Underbrace label component ────────────────────────────────
+function Underbrace({ children, label, color }) {
+  return (
+    <span className="dlag-brace-wrap">
+      {children}
+      <span className="dlag-brace-bar" style={{ '--bc': color }} />
+      <span className="dlag-brace-lbl" style={{ color }}>{label}</span>
+    </span>
+  );
+}
 
 // ── component ────────────────────────────────────────────────
 export default function InteractiveDemo() {
   const clipId = useId();
 
+  const [dataset,      setDataset]      = useState('blobs');
   const [boundaryType, setBoundaryType] = useState('linear');
-  const [selectedAction, setSelectedAction] = useState(null);
-  const [nonActionable, setNonActionable] = useState(false);
-  const [robustness, setRobustness] = useState(false);
-  const [delta, setDelta] = useState(0.15);
-  const [sparsity, setSparsity] = useState(false);
+  const [selectedAction,setSelectedAction] = useState(null);
+  const [nonActionable,setNonActionable] = useState(false);
+  const [robustness,   setRobustness]   = useState(false);
+  const [delta,        setDelta]        = useState(0.15);
+  const [sparsity,     setSparsity]     = useState(false);
 
-  const rejectedPath = useMemo(() => buildRejectedFill(boundaryType), [boundaryType]);
-  const boundaryPath = useMemo(() => buildBoundaryPath(boundaryType), [boundaryType]);
+  const rejectedPath = useMemo(
+    () => buildRejectedFill(boundaryType, dataset), [boundaryType, dataset]);
+  const boundaryPath = useMemo(
+    () => buildBoundaryPath(boundaryType, dataset), [boundaryType, dataset]);
 
-  // Ring radius in SVG pixels; endpoint will be exactly this far from boundary
   const deltaRingR = delta * PH * 0.48;
-  const BASE_MARGIN = 5; // px margin when robustness off
+  const BASE_MARGIN = 5;
+
+  const rejectedPts = dataset === 'moons' ? REJECTED_MOONS : REJECTED_BLOBS;
+  const approvedPts = dataset === 'moons' ? APPROVED_MOONS : APPROVED_BLOBS;
 
   function isDisabled(action, na = nonActionable, sp = sparsity) {
     if (na && (action.feature === 'savings' || action.feature === 'both')) return true;
@@ -186,15 +197,12 @@ export default function InteractiveDemo() {
     return false;
   }
 
-  // Compute live endpoints + costs for ALL actions whenever anything relevant changes.
-  // This means every action badge shows an up-to-date cost reflecting the current
-  // boundary shape, robustness level, and constraint set.
   const allEndpoints = useMemo(() => {
     const targetDist = robustness ? deltaRingR : BASE_MARGIN;
     const result = {};
     for (const action of ACTIONS) {
       if (isDisabled(action)) continue;
-      const ep = computeEndpoint(action.id, boundaryType, targetDist);
+      const ep = computeEndpoint(action.id, boundaryType, targetDist, dataset);
       const baseDist = Math.hypot(action.baseTo[0] - 25, action.baseTo[1] - 30);
       const epDist   = Math.hypot(ep[0] - 25, ep[1] - 30);
       result[action.id] = {
@@ -204,12 +212,11 @@ export default function InteractiveDemo() {
     }
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boundaryType, robustness, deltaRingR, nonActionable, sparsity]);
+  }, [boundaryType, dataset, robustness, deltaRingR, nonActionable, sparsity]);
 
   const selEndpoint = allEndpoints[selectedAction]?.ep ?? null;
   const selCost     = allEndpoints[selectedAction]?.cost ?? 0;
-
-  const youPt = toSvg(25, 30);
+  const youPt       = toSvg(25, 30);
 
   return (
     <section className="demo-section section-shell" id="demo">
@@ -261,7 +268,7 @@ export default function InteractiveDemo() {
               fill="rgba(16,185,129,0.055)" clipPath={`url(#${clipId}-clip)`}/>
 
             {/* boundary */}
-            <path key={boundaryType} d={boundaryPath} fill="none"
+            <path key={`${boundaryType}-${dataset}`} d={boundaryPath} fill="none"
               stroke="#1f2933" strokeWidth="2.2" strokeLinecap="round"
               clipPath={`url(#${clipId}-clip)`}/>
 
@@ -271,14 +278,14 @@ export default function InteractiveDemo() {
             <text x={PAD.l+PW-70} y={PAD.t+22} fontSize="9.5" fontWeight="700"
               fill="rgba(16,185,129,0.6)" letterSpacing="0.12em">APPROVED</text>
 
-            {/* background scatter points */}
-            {REJECTED_PTS.map(([cs, sr], i) => {
+            {/* scatter points */}
+            {rejectedPts.map(([cs, sr], i) => {
               const p = toSvg(cs, sr);
               return <circle key={`rp${i}`} cx={p.x} cy={p.y} r="4.5"
                 fill="rgba(239,68,68,0.18)" stroke="rgba(239,68,68,0.35)" strokeWidth="1"
                 clipPath={`url(#${clipId}-clip)`}/>;
             })}
-            {APPROVED_PTS.map(([cs, sr], i) => {
+            {approvedPts.map(([cs, sr], i) => {
               const p = toSvg(cs, sr);
               return <circle key={`ap${i}`} cx={p.x} cy={p.y} r="4.5"
                 fill="rgba(16,185,129,0.18)" stroke="rgba(16,185,129,0.35)" strokeWidth="1"
@@ -292,25 +299,21 @@ export default function InteractiveDemo() {
               const from = toSvg(25, 30);
               const end  = toSvg(selEndpoint[0], selEndpoint[1]);
               return (
-                <g key={`path-${selectedAction}-${boundaryType}`} clipPath={`url(#${clipId}-clip)`}>
-                  {/* δ-ring: radius = deltaRingR, endpoint is exactly that far from boundary */}
+                <g key={`path-${selectedAction}-${boundaryType}-${dataset}`} clipPath={`url(#${clipId}-clip)`}>
                   {robustness && (
                     <circle cx={end.x} cy={end.y} r={deltaRingR}
                       fill={`${action.color}10`} stroke={action.color}
                       strokeWidth="1.5" strokeDasharray="5 3" opacity="0.8"
                       style={{ animation: 'fadeIn 0.3s ease both' }}/>
                   )}
-                  {/* path line */}
                   <line x1={from.x} y1={from.y} x2={end.x} y2={end.y}
                     stroke={action.color} strokeWidth="2.2" strokeDasharray="6 4"
                     markerEnd={`url(#${clipId}-arr-${action.id})`} strokeLinecap="round"
                     style={{ animation: 'fadeIn 0.35s ease both' }}/>
-                  {/* destination dot */}
                   <circle cx={end.x} cy={end.y} r="9"
                     fill={action.soft} stroke={action.color} strokeWidth="2"
                     style={{ animation: 'fadeIn 0.35s ease both' }}/>
                   <circle cx={end.x} cy={end.y} r="3.5" fill={action.color}/>
-                  {/* cost label */}
                   <rect x={end.x+11} y={end.y-14} width="52" height="18" rx="5"
                     fill={action.soft} stroke={action.color} strokeWidth="1"/>
                   <text x={end.x+16} y={end.y-2} fontSize="9.5" fontWeight="700" fill={action.color}>
@@ -320,7 +323,7 @@ export default function InteractiveDemo() {
               );
             })()}
 
-            {/* "You" point */}
+            {/* YOU point */}
             <circle cx={youPt.x} cy={youPt.y} r="18"
               fill="rgba(234,88,12,0.08)"
               style={{ animation: 'pulse 2.5s ease infinite' }}/>
@@ -364,6 +367,25 @@ export default function InteractiveDemo() {
 
         {/* ── CONTROL PANEL ── */}
         <div className="demo-controls">
+
+          {/* dataset */}
+          <div className="demo-control-block">
+            <p className="demo-block-label">Dataset</p>
+            <div className="demo-btn-row">
+              {[['blobs','Dataset 1'],['moons','Dataset 2']].map(([key, lbl]) => (
+                <button key={key} type="button"
+                  className={`demo-type-btn${dataset === key ? ' active' : ''}`}
+                  onClick={() => { setDataset(key); setSelectedAction(null); }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            <p className="demo-type-desc">
+              {dataset === 'blobs'
+                ? 'Two Gaussian clusters — linearly separable'
+                : 'Two-moons — nonlinear boundary required'}
+            </p>
+          </div>
 
           {/* model type */}
           <div className="demo-control-block">
@@ -462,34 +484,36 @@ export default function InteractiveDemo() {
         </div>
       </div>
 
-      {/* ── Lagrangian bar — full width, below both columns ── */}
+      {/* ── Problem formulation bar — full width, below both columns ── */}
       <div className="demo-lagrangian">
-        <span className="dlag-label">Lagrangian</span>
+        <span className="dlag-label">Problem Formulation</span>
         <span className="dlag-math">
+          <span className="dlag-argmin">
+            {'argmin'}<sub>{'x′'}</sub>
+          </span>
           <span className="dlag-base">
-            {'ℒ(x′) = d(x, x′) + λ'}
-            <sub>1</sub>
-            {' [h(x′) ≠ +1]'}
+            {' d(x, x′)  +  λ₁ [h(x′) ≠ +1]'}
           </span>
           {nonActionable && (
-            <span className="dlag-term dlag-c1" key="na">
-              {' + λ'}<sub>2</sub>{' |x′'}
-              <sub>sav</sub>{' − x'}<sub>sav</sub>{' |'}
-            </span>
+            <Underbrace label="non-actionable" color="#2453a6" key="na">
+              <span className="dlag-c1">
+                {' + λ₂ |x′'}<sub>sav</sub>{' − x'}<sub>sav</sub>{'|'}
+              </span>
+            </Underbrace>
           )}
           {sparsity && (
-            <span className="dlag-term dlag-c2" key="sp">
-              {' + λ'}<sub>3</sub>{' ‖x′ − x‖'}<sub>0</sub>
-            </span>
+            <Underbrace label="sparsity" color="#7c3aed" key="sp">
+              <span className="dlag-c2">
+                {' + λ₃ ‖x′ − x‖'}<sub>0</sub>
+              </span>
+            </Underbrace>
           )}
           {robustness && (
-            <span className="dlag-term dlag-c3" key="rb">
-              {' + λ'}<sub>4</sub>
-              {' max'}
-              <sub>{'ε ∈ B\u{1D6FF}(0)'}</sub>
-              {' [h(x′+ε) ≠ +1]'}
-              <span className="dlag-delta">{`   (δ = ${delta.toFixed(2)})`}</span>
-            </span>
+            <Underbrace label={`robustness  (δ = ${delta.toFixed(2)})`} color="#c2410c" key="rb">
+              <span className="dlag-c3">
+                {' + λ₄ max'}<sub>{'ε ∈ Bδ(0)'}</sub>{' [h(x′+ε) ≠ +1]'}
+              </span>
+            </Underbrace>
           )}
         </span>
       </div>
