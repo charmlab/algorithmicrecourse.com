@@ -15,16 +15,20 @@ const toSvg = (cs, sr) => ({
 // ── boundary threshold functions (ds = 'blobs' | 'moons') ────
 function boundaryAt(cs, type, ds = 'blobs') {
   if (ds === 'moons') {
-    if (type === 'linear') return 105 - 1.2 * cs;
+    // Linear: horizontal line — least-error separator for two stacked crescents
+    if (type === 'linear') return 48;
+    // Tree: zigzag staircase through the gap between the two crescents
     if (type === 'tree') {
-      if (cs < 25) return 54;
-      if (cs < 50) return 42;
-      if (cs < 65) return 28;
-      if (cs < 80) return 16;
-      return 10;
+      if (cs < 25) return 46;
+      if (cs < 38) return 43;
+      if (cs < 52) return 51;
+      if (cs < 65) return 47;
+      if (cs < 78) return 40;
+      if (cs < 90) return 32;
+      return 25;
     }
-    // Neural net: S-curve that follows the gap between the crescents
-    return 60 - 0.5 * cs + 12 * Math.sin((cs * Math.PI) / 100);
+    // Neural net: inverted parabola tuned to two-moons gap
+    return Math.max(5, -0.012 * Math.pow(cs - 50, 2) + 55);
   }
   // blobs (original linear-sep)
   if (type === 'linear') return 125 - 1.5 * cs;
@@ -40,7 +44,7 @@ function boundaryAt(cs, type, ds = 'blobs') {
 function boundaryPts(type, ds = 'blobs') {
   if (type === 'tree') {
     if (ds === 'moons')
-      return [[0,54],[25,54],[25,42],[50,42],[50,28],[65,28],[65,16],[80,16],[80,10],[100,10]];
+      return [[0,46],[25,46],[25,43],[38,43],[38,51],[52,51],[52,47],[65,47],[65,40],[78,40],[78,32],[90,32],[90,25],[100,25]];
     return [[0,80],[30,80],[30,55],[50,55],[50,30],[70,30],[70,10],[100,10]];
   }
   return Array.from({ length: 51 }, (_, i) => [i * 2, boundaryAt(i * 2, type, ds)]);
@@ -133,15 +137,15 @@ const APPROVED_BLOBS = [
 ];
 
 // Dataset 2: two-moons (crescent-shaped, requires nonlinear boundary)
-// Rejected moon: lower arc of left circle (center≈35,43 r≈22)
+// Rejected moon: lower crescent — all points clearly below all three moons boundaries
 const REJECTED_MOONS = [
-  [13,43],[17,32],[24,23],[35,20],[46,23],[53,32],[57,43],
-  [20,37],[30,19],[41,18],[50,37],[11,49],[58,50],
+  [15,30],[25,22],[35,18],[45,15],[55,18],[65,24],[75,34],
+  [20,27],[30,15],[42,14],[58,21],[70,30],
 ];
-// Approved moon: upper arc of right circle (center≈65,57 r≈22)
+// Approved moon: upper crescent — all points clearly above all three moons boundaries
 const APPROVED_MOONS = [
-  [43,57],[50,71],[62,79],[73,79],[80,71],[87,57],
-  [56,76],[67,82],[76,74],[85,63],[44,63],[88,52],
+  [30,70],[40,78],[50,82],[60,80],[70,72],[80,60],[90,52],
+  [45,75],[55,78],[65,76],[75,65],[88,56],
 ];
 
 // ── actions ──────────────────────────────────────────────────
@@ -203,6 +207,11 @@ export default function InteractiveDemo() {
     for (const action of ACTIONS) {
       if (isDisabled(action)) continue;
       const ep = computeEndpoint(action.id, boundaryType, targetDist, dataset);
+      // If the walked endpoint is still not on the approved side, mark as unreachable
+      if (!isApproved(ep[0], ep[1], boundaryType, dataset)) {
+        result[action.id] = { ep: null, cost: null, unreachable: true };
+        continue;
+      }
       const baseDist = Math.hypot(action.baseTo[0] - 25, action.baseTo[1] - 30);
       const epDist   = Math.hypot(ep[0] - 25, ep[1] - 30);
       result[action.id] = {
@@ -230,7 +239,8 @@ export default function InteractiveDemo() {
       </div>
 
       <div className="demo-layout">
-        {/* ── SVG VISUALIZATION ── */}
+        {/* ── LEFT: figure + formulation bar ── */}
+        <div className="demo-figure-col">
         <div className="demo-canvas-wrap">
           <svg
             viewBox={`0 0 ${W} ${H}`}
@@ -363,7 +373,42 @@ export default function InteractiveDemo() {
               fontWeight="600" textAnchor="middle"
               transform={`rotate(-90, 10, ${PAD.t+PH/2})`}>Savings Rate</text>
           </svg>
-        </div>
+        </div>{/* end demo-canvas-wrap */}
+
+      {/* ── Problem formulation bar — scoped to figure column ── */}
+      <div className="demo-lagrangian">
+        <span className="dlag-label">Problem Formulation</span>
+        <span className="dlag-math">
+          <span className="dlag-argmin">
+            {'argmin'}<sub>{'x′'}</sub>
+          </span>
+          <span className="dlag-base">
+            {' d(x, x′)  +  λ₁ [h(x′) ≠ +1]'}
+          </span>
+          {nonActionable && (
+            <Underbrace label="non-actionable" color="#2453a6" key="na">
+              <span className="dlag-c1">
+                {' + λ₂ |x′'}<sub>sav</sub>{' − x'}<sub>sav</sub>{'|'}
+              </span>
+            </Underbrace>
+          )}
+          {sparsity && (
+            <Underbrace label="sparsity" color="#7c3aed" key="sp">
+              <span className="dlag-c2">
+                {' + λ₃ ‖x′ − x‖'}<sub>0</sub>
+              </span>
+            </Underbrace>
+          )}
+          {robustness && (
+            <Underbrace label={`robustness  (δ = ${delta.toFixed(2)})`} color="#c2410c" key="rb">
+              <span className="dlag-c3">
+                {' + λ₄ max'}<sub>{'ε ∈ Bδ(0)'}</sub>{' [h(x′+ε) ≠ +1]'}
+              </span>
+            </Underbrace>
+          )}
+        </span>
+      </div>
+        </div>{/* end demo-figure-col */}
 
         {/* ── CONTROL PANEL ── */}
         <div className="demo-controls">
@@ -375,7 +420,7 @@ export default function InteractiveDemo() {
               {[['blobs','Dataset 1'],['moons','Dataset 2']].map(([key, lbl]) => (
                 <button key={key} type="button"
                   className={`demo-type-btn${dataset === key ? ' active' : ''}`}
-                  onClick={() => { setDataset(key); setSelectedAction(null); }}>
+                  onClick={() => setDataset(key)}>
                   {lbl}
                 </button>
               ))}
@@ -462,6 +507,7 @@ export default function InteractiveDemo() {
             <div className="demo-action-list">
               {ACTIONS.map(action => {
                 const disabled = isDisabled(action);
+                const unreachable = !disabled && !!allEndpoints[action.id]?.unreachable;
                 const active = selectedAction === action.id && !disabled;
                 const liveCost = allEndpoints[action.id]?.cost ?? action.cost;
                 return (
@@ -472,8 +518,10 @@ export default function InteractiveDemo() {
                     <span className="demo-action-dot" style={{ background: action.color }}/>
                     <span className="demo-action-label">{action.label}</span>
                     <span className="demo-action-cost"
-                      style={{ background: action.soft, color: action.color }}>
-                      {disabled ? 'blocked' : `cost ${liveCost}`}
+                      style={unreachable
+                        ? { background: '#fee2e2', color: '#dc2626' }
+                        : { background: action.soft, color: action.color }}>
+                      {disabled ? 'blocked' : unreachable ? 'no path' : `cost ${liveCost}`}
                     </span>
                   </button>
                 );
@@ -484,39 +532,6 @@ export default function InteractiveDemo() {
         </div>
       </div>
 
-      {/* ── Problem formulation bar — full width, below both columns ── */}
-      <div className="demo-lagrangian">
-        <span className="dlag-label">Problem Formulation</span>
-        <span className="dlag-math">
-          <span className="dlag-argmin">
-            {'argmin'}<sub>{'x′'}</sub>
-          </span>
-          <span className="dlag-base">
-            {' d(x, x′)  +  λ₁ [h(x′) ≠ +1]'}
-          </span>
-          {nonActionable && (
-            <Underbrace label="non-actionable" color="#2453a6" key="na">
-              <span className="dlag-c1">
-                {' + λ₂ |x′'}<sub>sav</sub>{' − x'}<sub>sav</sub>{'|'}
-              </span>
-            </Underbrace>
-          )}
-          {sparsity && (
-            <Underbrace label="sparsity" color="#7c3aed" key="sp">
-              <span className="dlag-c2">
-                {' + λ₃ ‖x′ − x‖'}<sub>0</sub>
-              </span>
-            </Underbrace>
-          )}
-          {robustness && (
-            <Underbrace label={`robustness  (δ = ${delta.toFixed(2)})`} color="#c2410c" key="rb">
-              <span className="dlag-c3">
-                {' + λ₄ max'}<sub>{'ε ∈ Bδ(0)'}</sub>{' [h(x′+ε) ≠ +1]'}
-              </span>
-            </Underbrace>
-          )}
-        </span>
-      </div>
     </section>
   );
 }

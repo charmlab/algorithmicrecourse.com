@@ -527,6 +527,12 @@ select { font-family: inherit; }
   align-items: start;
 }
 
+.demo-figure-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .demo-canvas-wrap {
   border-radius: 24px;
   background: rgba(255, 253, 249, 0.92);
@@ -536,9 +542,9 @@ select { font-family: inherit; }
   padding: 0.6rem;
 }
 
-/* ── Lagrangian bar (full-width, below both columns) ── */
+/* ── Problem Formulation bar — below the figure column only ── */
 .demo-lagrangian {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   background: rgba(255, 253, 249, 0.92);
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -572,7 +578,7 @@ select { font-family: inherit; }
   color: var(--text);
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0;
   line-height: 1.7;
 }
@@ -595,21 +601,21 @@ select { font-family: inherit; }
   white-space: nowrap;
 }
 
-/* Underbrace wrapper — stacks term on top, bar, then label */
+/* Underbrace wrapper — absolute positioning keeps text on the math baseline */
 .dlag-brace-wrap {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 20px;
   animation: fadeIn 0.28s ease both;
 }
 
 .dlag-brace-bar {
-  width: calc(100% - 4px);
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
   height: 0;
   border-top: 1.5px solid var(--bc, currentColor);
-  margin-top: 2px;
-  position: relative;
-  align-self: stretch;
 }
 
 .dlag-brace-bar::before,
@@ -618,19 +624,21 @@ select { font-family: inherit; }
   position: absolute;
   top: 0;
   height: 5px;
-  border-left: 1.5px solid var(--bc, currentColor);
 }
 
-.dlag-brace-bar::before { left: 0; }
-.dlag-brace-bar::after  { right: 0; border-left: none; border-right: 1.5px solid var(--bc, currentColor); }
+.dlag-brace-bar::before { left: 0;  border-left:  1.5px solid var(--bc, currentColor); }
+.dlag-brace-bar::after  { right: 0; border-right: 1.5px solid var(--bc, currentColor); }
 
 .dlag-brace-lbl {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: 'Inter', -apple-system, sans-serif;
   font-size: 0.58rem;
   font-weight: 700;
   font-style: normal;
   letter-spacing: 0.04em;
-  margin-top: 2px;
   white-space: nowrap;
   line-height: 1;
 }
