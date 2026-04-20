@@ -26,9 +26,10 @@ function boundaryAt(cs, type, ds = 'blobs') {
       if (cs < 75) return 26;
       return 18;
     }
-    // Neural net: arch-curve hugging the crescent gap — starts low-left,
-    // peaks at cs≈55 (the overlap zone), drops steeply right
-    return 58 - 0.55 * cs + 20 * Math.sin((Math.PI * (cs - 5)) / 100);
+    // Neural net: arch that weaves through the yin-yang gap.
+    // Starts low-left (just above rejected crescent's top), peaks at cs≈55
+    // (the gap's widest point), then drops steeply on the right.
+    return 35 - 0.15 * cs + 25 * Math.sin((Math.PI * (cs - 5)) / 100);
   }
   // blobs (original linear-sep) — unchanged
   if (type === 'linear') return 125 - 1.5 * cs;

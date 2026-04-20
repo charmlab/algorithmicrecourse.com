@@ -68,39 +68,6 @@ const IDEAS = [
     refs: ['Kim et al. — TCAV', 'Bengio et al. — Representation Learning', 'Goyal et al. — Counterfactual Visual Explanations'],
   },
   {
-    id: 7,
-    title: 'Trust and Delegation in Recourse Systems',
-    category: 'Human Factors',
-    tldr: 'When should users trust recourse recommendations?',
-    description: [
-      'Recourse assumes that users trust both the decision-making system and the entity providing recommendations. In practice, these roles may have conflicting incentives, and users may question whether suggested actions are truly in their best interest. This introduces issues of trust, delegation, and strategic behavior.',
-      'This problem studies how trust is formed and maintained in recourse systems, and how recommendations should be presented to ensure credibility. Addressing it is essential for adoption, particularly in high-stakes settings where users must rely on system guidance.',
-    ],
-    refs: ['Hardt et al. — Equality of Opportunity', 'Kearns & Roth — The Ethical Algorithm', 'Milli et al. — Model Reconstruction'],
-  },
-  {
-    id: 8,
-    title: 'Sequential and Multi-Step Recourse',
-    category: 'Sequential',
-    tldr: 'Recourse as a multi-step process, not a one-shot fix.',
-    description: [
-      'Most recourse methods provide single-step recommendations, assuming that individuals can immediately implement changes. In reality, meaningful interventions often require sequences of actions over time, with dependencies between steps and uncertainty in outcomes. This limitation restricts the applicability of current approaches.',
-      'This problem reframes recourse as a sequential decision-making process, where recommendations evolve over time and adapt to feedback. Solving it would significantly expand the space of feasible interventions and align recourse with real-world behavioral change.',
-    ],
-    refs: ['Sutton & Barto — Reinforcement Learning', 'Poyiadzi et al. — FACE', 'Dean et al. — Policy Optimization'],
-  },
-  {
-    id: 9,
-    title: 'Recourse under Incomplete World Knowledge',
-    category: 'Knowledge',
-    tldr: 'Recourse that accounts for real-world constraints and context.',
-    description: [
-      'Recourse methods typically assume that all relevant constraints and preferences are known and can be encoded into an optimization problem. In practice, many factors — such as personal circumstances, social norms, and feasibility constraints — are difficult to formalize and often omitted.',
-      'This problem investigates how to incorporate external or human knowledge into recourse systems, either through interaction or auxiliary models. Addressing this gap would make recourse more actionable and aligned with real-world decision-making.',
-    ],
-    refs: ['Russell — Human Compatible', 'Amershi et al. — Interactive ML', 'Karimi et al. — Recourse Survey'],
-  },
-  {
     id: 10,
     title: 'Recourse in Multi-Agent Environments',
     category: 'Multi-Agent',
@@ -122,55 +89,17 @@ const IDEAS = [
     ],
     refs: ['Ng & Russell — Inverse RL', 'Christiano et al. — RL from Human Preferences', 'Ustun et al. — Actionable Recourse'],
   },
-  {
-    id: 12,
-    title: 'Communication Protocols for Recourse',
-    category: 'Interaction',
-    tldr: 'Recourse as an interactive dialogue.',
-    description: [
-      'Most recourse systems provide static, one-shot recommendations, ignoring the interactive nature of human decision-making. Users may need clarification, have additional constraints, or prefer alternative actions that are not initially considered.',
-      'This problem studies how to design interactive communication protocols where systems iteratively refine recommendations based on user feedback. This would transform recourse into a collaborative process, improving both effectiveness and user experience.',
-    ],
-    refs: ['Amershi et al. — Human-AI Interaction Guidelines', 'Shneiderman — Human-Centered AI', 'Ribeiro et al. — LIME'],
-  },
-  {
-    id: 13,
-    title: 'Recourse under Partial Observability',
-    category: 'Theory',
-    tldr: 'Recourse when the system does not fully know the user.',
-    description: [
-      'In many real-world scenarios, systems do not have complete information about users, including hidden constraints, preferences, or contextual factors. Current recourse methods assume full observability, which rarely holds in practice.',
-      'This problem studies how to generate recourse under uncertainty about the user\'s true state, ensuring recommendations remain valid even with incomplete information. Addressing it would improve the robustness and reliability of recourse systems.',
-    ],
-    refs: ['Kaelbling et al. — POMDPs', 'Pearl — Causality', 'Karimi et al. — Recourse Survey'],
-  },
-  {
-    id: 14,
-    title: 'From Recourse to Human-AI Collaboration Systems',
-    category: 'Human-AI',
-    tldr: 'Recourse as a building block for human-AI collaboration.',
-    description: [
-      'Recourse is typically framed as a mechanism for correcting model decisions, but it can be viewed more broadly as a primitive form of human-AI interaction. This perspective opens the door to systems where humans and AI collaboratively refine decisions over time.',
-      'This problem generalizes recourse into a broader framework of human-AI collaboration, emphasizing interaction, adaptation, and shared decision-making. Solving it would position recourse within the next generation of intelligent, interactive systems.',
-    ],
-    refs: ['Russell — Human Compatible', 'Hadfield-Menell et al. — Cooperative IRL', 'Amershi et al. — Interactive ML'],
-  },
 ];
 
 // Assign a colour to each category
 const CAT_COLORS = {
-  Causality:          { color: '#2453a6', bg: '#dbe7ff' },
-  Robustness:         { color: '#dc2626', bg: '#fee2e2' },
-  Theory:             { color: '#7c3aed', bg: '#ede9fe' },
+  Causality:           { color: '#2453a6', bg: '#dbe7ff' },
+  Robustness:          { color: '#dc2626', bg: '#fee2e2' },
+  Theory:              { color: '#7c3aed', bg: '#ede9fe' },
   'Structured Systems':{ color: '#0891b2', bg: '#cffafe' },
-  Representation:     { color: '#ca8a04', bg: '#fef9c3' },
-  'Human Factors':    { color: '#be185d', bg: '#fce7f3' },
-  Sequential:         { color: '#059669', bg: '#d1fae5' },
-  Knowledge:          { color: '#8a4b18', bg: '#f7e5d1' },
-  'Multi-Agent':      { color: '#4f46e5', bg: '#e0e7ff' },
-  Learning:           { color: '#1d7a55', bg: '#dff3ea' },
-  Interaction:        { color: '#9333ea', bg: '#f3e8ff' },
-  'Human-AI':         { color: '#1d4ed8', bg: '#dbeafe' },
+  Representation:      { color: '#ca8a04', bg: '#fef9c3' },
+  'Multi-Agent':       { color: '#4f46e5', bg: '#e0e7ff' },
+  Learning:            { color: '#1d7a55', bg: '#dff3ea' },
 };
 
 export default function IdeaBoard() {
@@ -186,7 +115,7 @@ export default function IdeaBoard() {
         <span className="eyebrow">Open research questions</span>
         <h2>Ideas worth exploring</h2>
         <p>
-          Fourteen concrete, tractable problems where a careful contribution would move the field forward.
+          Eight concrete, tractable problems where a careful contribution would move the field forward.
           Click any card to read the full description and references.
         </p>
       </div>
