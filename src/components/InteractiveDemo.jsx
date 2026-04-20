@@ -26,8 +26,9 @@ function boundaryAt(cs, type, ds = 'blobs') {
       if (cs < 75) return 26;
       return 18;
     }
-    // Neural net: S-curve that hugs the curved gap between the two crescents
-    return 62 - 0.5 * cs + 12 * Math.sin((Math.PI * (cs - 10)) / 100);
+    // Neural net: arch-curve hugging the crescent gap — starts low-left,
+    // peaks at cs≈55 (the overlap zone), drops steeply right
+    return 58 - 0.55 * cs + 20 * Math.sin((Math.PI * (cs - 5)) / 100);
   }
   // blobs (original linear-sep) — unchanged
   if (type === 'linear') return 125 - 1.5 * cs;
@@ -104,7 +105,8 @@ function computeEndpoint(actionId, boundaryType, targetDist, ds) {
     return [100, 30];
   }
   if (actionId === 'a2') {
-    for (let sr = 70; sr <= 100; sr += 0.4) {
+    // Start walk just above YOU's sr=30 so endpoint reflects actual boundary height
+    for (let sr = 32; sr <= 100; sr += 0.4) {
       if (isApproved(25, sr, boundaryType, ds) &&
           distToBoundarySvg(25, sr, boundaryType, ds) >= targetDist) {
         return [25, sr];
