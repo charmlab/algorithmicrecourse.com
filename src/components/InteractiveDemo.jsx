@@ -15,22 +15,21 @@ const toSvg = (cs, sr) => ({
 // ── boundary threshold functions (ds = 'blobs' | 'moons') ────
 function boundaryAt(cs, type, ds = 'blobs') {
   if (ds === 'moons') {
-    // Linear: horizontal line — least-error separator for two stacked crescents
-    if (type === 'linear') return 48;
-    // Tree: zigzag staircase through the gap between the two crescents
+    // Linear: diagonal line — least-error linear separator for the interlocked crescents
+    // Perpendicular bisector between cluster centers (≈35,20) and (≈65,65)
+    if (type === 'linear') return 80 - 0.7 * cs;
+    // Tree: staircase approximation of the diagonal gap, stepping down right-to-right
     if (type === 'tree') {
-      if (cs < 25) return 46;
-      if (cs < 38) return 43;
-      if (cs < 52) return 51;
-      if (cs < 65) return 47;
-      if (cs < 78) return 40;
-      if (cs < 90) return 32;
-      return 25;
+      if (cs < 30) return 65;
+      if (cs < 45) return 50;
+      if (cs < 60) return 40;
+      if (cs < 75) return 26;
+      return 18;
     }
-    // Neural net: inverted parabola tuned to two-moons gap
-    return Math.max(5, -0.012 * Math.pow(cs - 50, 2) + 55);
+    // Neural net: S-curve that hugs the curved gap between the two crescents
+    return 62 - 0.5 * cs + 12 * Math.sin((Math.PI * (cs - 10)) / 100);
   }
-  // blobs (original linear-sep)
+  // blobs (original linear-sep) — unchanged
   if (type === 'linear') return 125 - 1.5 * cs;
   if (type === 'tree') {
     if (cs < 30) return 80;
@@ -44,7 +43,8 @@ function boundaryAt(cs, type, ds = 'blobs') {
 function boundaryPts(type, ds = 'blobs') {
   if (type === 'tree') {
     if (ds === 'moons')
-      return [[0,46],[25,46],[25,43],[38,43],[38,51],[52,51],[52,47],[65,47],[65,40],[78,40],[78,32],[90,32],[90,25],[100,25]];
+      // Staircase stepping down from upper-left to lower-right, matching boundaryAt
+      return [[0,65],[30,65],[30,50],[45,50],[45,40],[60,40],[60,26],[75,26],[75,18],[100,18]];
     return [[0,80],[30,80],[30,55],[50,55],[50,30],[70,30],[70,10],[100,10]];
   }
   return Array.from({ length: 51 }, (_, i) => [i * 2, boundaryAt(i * 2, type, ds)]);
@@ -136,16 +136,18 @@ const APPROVED_BLOBS = [
   [76,64],[86,50],[71,82],[91,34],[81,86],[62,72],[96,21],[67,60],[89,76],[78,40],[55,75],
 ];
 
-// Dataset 2: two-moons (crescent-shaped, requires nonlinear boundary)
-// Rejected moon: lower crescent — all points clearly below all three moons boundaries
+// Dataset 2: classic interlocked two-moons
+// Rejected moon: lower-left crescent (center ≈ cs=35, sr=20)
+//   All sr < boundaryAt(cs) for linear (80-0.7cs), tree, and NN
 const REJECTED_MOONS = [
-  [15,30],[25,22],[35,18],[45,15],[55,18],[65,24],[75,34],
-  [20,27],[30,15],[42,14],[58,21],[70,30],
+  [12,25],[18,18],[27,13],[38,12],[48,16],[55,25],[58,36],
+  [22,20],[32,11],[44,13],[52,30],
 ];
-// Approved moon: upper crescent — all points clearly above all three moons boundaries
+// Approved moon: upper-right crescent (center ≈ cs=65, sr=65)
+//   All sr > boundaryAt(cs) for linear, tree, and NN
 const APPROVED_MOONS = [
-  [30,70],[40,78],[50,82],[60,80],[70,72],[80,60],[90,52],
-  [45,75],[55,78],[65,76],[75,65],[88,56],
+  [42,55],[50,68],[60,76],[72,78],[82,72],[88,60],[90,50],
+  [55,72],[67,78],[78,68],[86,55],
 ];
 
 // ── actions ──────────────────────────────────────────────────
